@@ -46,7 +46,6 @@ exports.getArticleById = async (req, res) => {
       .json({ error: "Failed to get article", message: err.message });
   }
 };
-
 // Update an article by ID
 exports.updateArticle = async (req, res) => {
   try {

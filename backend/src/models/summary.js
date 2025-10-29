@@ -1,6 +1,10 @@
 const mongoose = require("mongoose");
 
 const summarySchema = new mongoose.Schema({
+  originalText: {
+    type: String,
+    required: true,
+  },
   summaryText: {
     type: String,
     required: true,
