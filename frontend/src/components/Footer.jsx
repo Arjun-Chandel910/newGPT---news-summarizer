@@ -17,13 +17,13 @@ const Footer = () => {
           className="text-xs text-yellow-400 hover:underline mx-2 transition"
           href="#"
         >
-          sdfdgdkljdlkf
+          Privacy policy
         </a>
         <a
           className="text-xs text-yellow-400 hover:underline mx-2 transition"
           href="#"
         >
-          sdflkjsaljsdf
+          privacy policy
         </a>
       </div>
     </footer>
