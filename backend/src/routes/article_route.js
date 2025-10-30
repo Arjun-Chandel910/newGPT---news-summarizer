@@ -7,15 +7,16 @@ const {
   updateArticle,
   deleteArticle,
 } = require("../controllers/article_controller.js");
+const { requiredUser } = require("../middleware/auth_middleware.js");
 
-router.post("/", createArticle);
+router.post("/", requiredUser, createArticle);
 
-router.get("/", getAllArticles);
+router.get("/", requiredUser, getAllArticles);
 
 router.get("/:id", getArticleById);
 
-router.put("/:id", updateArticle);
+router.put("/:id", requiredUser, updateArticle);
 
-router.delete("/:id", deleteArticle);
+router.delete("/:id", requiredUser, deleteArticle);
 
 module.exports = router;
