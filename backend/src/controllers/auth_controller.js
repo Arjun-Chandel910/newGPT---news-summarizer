@@ -31,15 +31,19 @@ module.exports.registerUser = async (req, res) => {
     const access_token = jwt.sign(
       { id: user._id },
       process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: "1m" }
+      { expiresIn: "15m" }
     );
     const refresh_token = jwt.sign(
       { id: user._id },
       process.env.REFRESH_TOKEN_SECRET,
-      { expiresIn: "2m" }
+      { expiresIn: "7d" }
     );
-    res.cookie("access_token", access_token, cookieOptions(1 * 60 * 1000));
-    res.cookie("refresh_token", refresh_token, cookieOptions(2 * 60 * 1000));
+    res.cookie("access_token", access_token, cookieOptions(15 * 60 * 1000));
+    res.cookie(
+      "refresh_token",
+      refresh_token,
+      cookieOptions(7 * 24 * 60 * 1000)
+    );
     res.status(201).json({
       message: "User registered successfully",
       user: {
@@ -68,7 +72,7 @@ module.exports.loginUser = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select("+password");
     if (!user || !user.password) {
       return res.status(401).json({
         message: "Invalid email or password.",
@@ -85,16 +89,20 @@ module.exports.loginUser = async (req, res) => {
     const access_token = jwt.sign(
       { id: user._id },
       process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: "1m" }
+      { expiresIn: "15m" }
     );
     const refresh_token = jwt.sign(
       { id: user._id },
       process.env.REFRESH_TOKEN_SECRET,
-      { expiresIn: "2m" }
+      { expiresIn: "7d" }
     );
 
-    res.cookie("access_token", access_token, cookieOptions(1 * 60 * 1000));
-    res.cookie("refresh_token", refresh_token, cookieOptions(2 * 60 * 1000));
+    res.cookie("access_token", access_token, cookieOptions(15 * 60 * 1000));
+    res.cookie(
+      "refresh_token",
+      refresh_token,
+      cookieOptions(7 * 24 * 60 * 1000)
+    );
 
     res.status(200).json({
       message: "Logged in successfully!",
@@ -116,6 +124,9 @@ module.exports.loginUser = async (req, res) => {
 //refresh
 module.exports.refreshAccessToken = async (req, res) => {
   try {
+    console.log(
+      "----------------------------------Refresh-------------------------------"
+    );
     const refreshToken = req.cookies.refresh_token;
     if (!refreshToken) {
       return res.status(401).json({ message: "No refresh token provided." });
@@ -134,13 +145,13 @@ module.exports.refreshAccessToken = async (req, res) => {
         const newAccessToken = jwt.sign(
           { id: decoded.id },
           process.env.ACCESS_TOKEN_SECRET,
-          { expiresIn: "1m" }
+          { expiresIn: "15m" }
         );
 
         res.cookie(
           "access_token",
           newAccessToken,
-          cookieOptions(1 * 60 * 1000)
+          cookieOptions(15 * 60 * 1000)
         );
         res.status(200).json({
           message: "Access token refreshed successfully.",
@@ -180,6 +191,9 @@ module.exports.logout = async (req, res) => {
 module.exports.getCurrentUser = async (req, res) => {
   try {
     const accessToken = req.cookies.access_token;
+    const refreshToken = req.cookies.refresh_token;
+    console.log("accessToken", accessToken);
+    console.log("refreshToken", refreshToken);
     if (!accessToken) {
       return res.status(401).json({ message: "Not logged in." });
     }

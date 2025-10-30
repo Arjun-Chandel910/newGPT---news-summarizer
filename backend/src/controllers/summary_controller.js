@@ -11,7 +11,6 @@ exports.createSummary = async (req, res) => {
       return res.status(400).json({ error: "text and user are required." });
     }
     const client = new InferenceClient(process.env.HF_TOKEN);
-
     const summaryOutput = await client.summarization({
       model: "facebook/bart-large-cnn",
       inputs: originalText,

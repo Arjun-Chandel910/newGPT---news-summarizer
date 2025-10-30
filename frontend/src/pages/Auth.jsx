@@ -1,20 +1,47 @@
 import React, { useState } from "react";
-import {
-  Box,
-  Button,
-  Card,
-  Divider,
-  TextField,
-  Typography,
-  FormControlLabel,
-  Checkbox,
-  Link,
-} from "@mui/material";
+import { Box, Button, Card, TextField, Typography, Link } from "@mui/material";
 import GoogleIcon from "@mui/icons-material/Google";
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
+import { useAuth } from "../context/AuthProvider";
+import { notifyError, notifySuccess } from "../utils/Toast.js";
+import { useNavigate } from "react-router-dom";
 
 const AuthForm = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [submitting, setSubmitting] = useState(false);
+  const { login, signup, refreshUser } = useAuth();
+
+  const navigate = useNavigate();
+  const handleChange = (e) =>
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      if (isLogin) {
+        const res = await login({ email: form.email, password: form.password });
+        notifySuccess(res.message || "Login successfull!");
+        navigate("/");
+      } else {
+        const res = await signup({
+          name: form.name,
+          email: form.email,
+          password: form.password,
+        });
+        notifySuccess(res.message || "Sign up successful!");
+        setIsLogin(true);
+        navigate("/");
+      }
+    } catch (err) {
+      notifyError(
+        err?.response?.data?.message ||
+          "Authentication error. Please try again."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <Box
@@ -22,148 +49,132 @@ const AuthForm = () => {
       display="flex"
       alignItems="center"
       justifyContent="center"
-      bgcolor="#fff"
+      bgcolor="#f8fafc"
     >
       <Card
         sx={{
-          p: 2.2,
-          borderRadius: 3,
-          maxWidth: 280,
+          p: 2.5,
+          borderRadius: 2.5,
+          maxWidth: 330,
           width: "100%",
-          boxShadow: "0px 7px 32px -8px rgba(40,40,70,0.18)",
-          border: "1.5px solid #ececec",
-          bgcolor: "#101a2c",
+          boxShadow: "0 6px 28px 0px rgba(40,40,70,0.10)",
+          bgcolor: "#192340",
         }}
       >
-        <Box display="flex" justifyContent="center" gap={0.5} mb={1}>
-          <Button
-            variant={isLogin ? "contained" : "text"}
-            color="primary"
-            onClick={() => setIsLogin(true)}
-            sx={{
-              fontWeight: "bold",
-              borderRadius: 2,
-              minWidth: 54,
-              py: 0.3,
-              textTransform: "none",
-              fontSize: "0.97rem",
-              boxShadow: isLogin ? "0 1px 4px rgba(60,60,60,.11)" : "",
-            }}
-          >
-            Login
-          </Button>
-          <Button
-            variant={!isLogin ? "contained" : "text"}
-            color="primary"
-            onClick={() => setIsLogin(false)}
-            sx={{
-              fontWeight: "bold",
-              borderRadius: 2,
-              minWidth: 54,
-              py: 0.3,
-              textTransform: "none",
-              fontSize: "0.97rem",
-              boxShadow: !isLogin ? "0 1px 4px rgba(60,60,60,.11)" : "",
-            }}
-          >
-            Sign Up
-          </Button>
-        </Box>
-
-        <Box
-          component="form"
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 0.9,
-            mt: 1,
-          }}
+        <Typography
+          variant="h6"
+          textAlign="center"
+          fontWeight={700}
+          color="#ffd700"
+          mb={2}
+        >
+          {isLogin ? "Login" : "Sign Up"}
+        </Typography>
+        <form
+          style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
+          onSubmit={handleSubmit}
         >
           {!isLogin && (
             <TextField
               label="Name"
+              name="name"
               variant="outlined"
               fullWidth
               required
               size="small"
+              value={form.name}
+              onChange={handleChange}
               InputProps={{
                 sx: {
-                  bgcolor: "#192340",
-                  fontSize: "0.96rem",
+                  bgcolor: "#232c49",
+                  fontSize: "1rem",
                   color: "#fff",
                 },
               }}
-              InputLabelProps={{ sx: { fontSize: "0.95rem", color: "#aaa" } }}
+              InputLabelProps={{
+                sx: { color: "#aaa", fontWeight: 500 },
+              }}
             />
           )}
           <TextField
             label="Email"
+            name="email"
             type="email"
             variant="outlined"
             fullWidth
             required
             size="small"
+            value={form.email}
+            onChange={handleChange}
             InputProps={{
               sx: {
-                bgcolor: "#192340",
-                fontSize: "0.96rem",
+                bgcolor: "#232c49",
+                fontSize: "1rem",
                 color: "#fff",
               },
             }}
-            InputLabelProps={{ sx: { fontSize: "0.95rem", color: "#aaa" } }}
+            InputLabelProps={{
+              sx: { color: "#aaa", fontWeight: 500 },
+            }}
           />
           <TextField
             label="Password"
+            name="password"
             type="password"
             variant="outlined"
             fullWidth
             required
             size="small"
+            value={form.password}
+            onChange={handleChange}
             InputProps={{
               sx: {
-                bgcolor: "#192340",
-                fontSize: "0.96rem",
+                bgcolor: "#232c49",
+                fontSize: "1rem",
                 color: "#fff",
               },
             }}
-            InputLabelProps={{ sx: { fontSize: "0.95rem", color: "#aaa" } }}
+            InputLabelProps={{
+              sx: { color: "#aaa", fontWeight: 500 },
+            }}
           />
-          {isLogin && (
-            <FormControlLabel
-              control={<Checkbox color="primary" size="small" />}
-              label={
-                <Typography color="#bbb" fontSize="0.93rem">
-                  Remember me
-                </Typography>
-              }
-              sx={{ alignSelf: "flex-start", my: -0.3 }}
-            />
-          )}
           <Button
+            type="submit"
             variant="contained"
             color="primary"
+            fullWidth
+            disabled={submitting}
             sx={{
-              mt: 0.8,
+              mt: 1,
               py: 1,
-              fontWeight: "bold",
               borderRadius: 2,
               bgcolor: "#ffd700",
-              color: "#212a3f",
+              color: "#222",
+              fontWeight: 700,
+              fontSize: "1rem",
               textTransform: "none",
-              fontSize: "0.99rem",
-              minHeight: 36,
               "&:hover": { bgcolor: "#f5c518" },
-              boxShadow: "0 2px 8px rgba(20,20,20,0.09)",
+              boxShadow: "none",
             }}
-            fullWidth
           >
-            {isLogin ? "Login" : "Sign Up"}
+            {submitting
+              ? isLogin
+                ? "Logging In..."
+                : "Signing Up..."
+              : isLogin
+              ? "Login"
+              : "Sign Up"}
           </Button>
+        </form>
+
+        {/* Minimal divider and social buttons */}
+        <Box textAlign="center" my={2}>
+          <Typography color="#aaa" fontSize="0.95rem">
+            or
+          </Typography>
         </Box>
 
-        <Divider sx={{ my: 1.5, color: "#2a304a" }}>or</Divider>
-
-        <Box display="flex" flexDirection="column" gap={0.7}>
+        <Box display="flex" flexDirection="column" gap={1} mt={1}>
           <Button
             variant="outlined"
             startIcon={<GoogleIcon fontSize="small" />}
@@ -172,12 +183,14 @@ const AuthForm = () => {
               borderRadius: 2,
               borderColor: "#ffd700",
               color: "#ffd700",
-              background: "#181f2c",
+              background: "#232c49",
               fontWeight: "bold",
               textTransform: "none",
-              minHeight: 34,
               fontSize: "0.97rem",
-              "&:hover": { bgcolor: "#23272a", borderColor: "#fcc302" },
+              "&:hover": { bgcolor: "#222a40", borderColor: "#fcc302" },
+            }}
+            onClick={() => {
+              window.location.href = process.env.REACT_APP_GOOGLE_OAUTH_URL;
             }}
           >
             {isLogin ? "Login" : "Sign Up"} with Google
@@ -190,12 +203,14 @@ const AuthForm = () => {
               borderRadius: 2,
               borderColor: "#2867B2",
               color: "#66b2ff",
-              background: "#181f2c",
+              background: "#232c49",
               fontWeight: "bold",
               textTransform: "none",
-              minHeight: 34,
               fontSize: "0.97rem",
               "&:hover": { bgcolor: "#212a3f", borderColor: "#254b73" },
+            }}
+            onClick={() => {
+              window.location.href = process.env.REACT_APP_LINKEDIN_OAUTH_URL;
             }}
           >
             {isLogin ? "Login" : "Sign Up"} with LinkedIn
@@ -203,7 +218,12 @@ const AuthForm = () => {
         </Box>
 
         <Typography
-          sx={{ textAlign: "center", color: "#aaa", fontSize: "0.9rem", mt: 1 }}
+          sx={{
+            textAlign: "center",
+            color: "#aaa",
+            fontSize: "0.93rem",
+            mt: 2,
+          }}
         >
           {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
           <Link
@@ -214,7 +234,7 @@ const AuthForm = () => {
               color: "#ffc300",
               fontWeight: "bold",
               cursor: "pointer",
-              fontSize: "0.92rem",
+              fontSize: "0.96rem",
             }}
           >
             {isLogin ? "Sign Up" : "Login"}
