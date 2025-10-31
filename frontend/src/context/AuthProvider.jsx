@@ -12,8 +12,8 @@ export const AuthProvider = ({ children }) => {
   // login
   const login = async (credentials) => {
     try {
-      console.log(credentials);
       const res = await api.post("/auth/login", credentials);
+
       setCurrentUser(res.data.user);
 
       return res.data;
@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }) => {
   const fetchCurrentUser = async () => {
     try {
       const res = await api.get("/auth/me");
-      console.log("fetchCurrentUser", res.data);
+
       setCurrentUser(res.data.user);
     } catch (err) {
       setCurrentUser(null);
@@ -68,6 +68,7 @@ export const AuthProvider = ({ children }) => {
     signup,
     refreshUser: fetchCurrentUser,
     loading,
+    currentUser,
     isAuthenticated: !!currentUser,
   };
   // setLoading(false);

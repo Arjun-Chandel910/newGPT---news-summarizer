@@ -3,14 +3,16 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user.js");
 
+// Cookie options helper
 const cookieOptions = (maxAge) => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
   maxAge,
+  path: "/",
 });
 
-// signup
+// Register user
 module.exports.registerUser = async (req, res) => {
   try {
     const { password, username, email } = req.body;
@@ -28,22 +30,19 @@ module.exports.registerUser = async (req, res) => {
       password: hashedPassword,
       email,
     });
+    // Access: 1 min, Refresh: 5 min
     const access_token = jwt.sign(
       { id: user._id },
       process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: "15m" }
+      { expiresIn: "1m" }
     );
     const refresh_token = jwt.sign(
       { id: user._id },
       process.env.REFRESH_TOKEN_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "5m" }
     );
-    res.cookie("access_token", access_token, cookieOptions(15 * 60 * 1000));
-    res.cookie(
-      "refresh_token",
-      refresh_token,
-      cookieOptions(7 * 24 * 60 * 1000)
-    );
+    res.cookie("access_token", access_token, cookieOptions(1 * 60 * 1000)); // 1 min
+    res.cookie("refresh_token", refresh_token, cookieOptions(5 * 60 * 1000)); // 5 min
     res.status(201).json({
       message: "User registered successfully",
       user: {
@@ -61,49 +60,40 @@ module.exports.registerUser = async (req, res) => {
   }
 };
 
-// login
+// Login user
 module.exports.loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-
     if (!email || !password) {
       return res.status(400).json({
         message: "Email and password are required.",
       });
     }
-
     const user = await User.findOne({ email }).select("+password");
     if (!user || !user.password) {
       return res.status(401).json({
         message: "Invalid email or password.",
       });
     }
-
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({
         message: "Invalid email or password.",
       });
     }
-
+    // Access: 1 min, Refresh: 5 min
     const access_token = jwt.sign(
       { id: user._id },
       process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: "15m" }
+      { expiresIn: "7d" }
     );
     const refresh_token = jwt.sign(
       { id: user._id },
       process.env.REFRESH_TOKEN_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "5m" }
     );
-
-    res.cookie("access_token", access_token, cookieOptions(15 * 60 * 1000));
-    res.cookie(
-      "refresh_token",
-      refresh_token,
-      cookieOptions(7 * 24 * 60 * 1000)
-    );
-
+    res.cookie("access_token", access_token, cookieOptions(7 * 24 * 60 * 1000)); // 1 min
+    res.cookie("refresh_token", refresh_token, cookieOptions(5 * 60 * 1000)); // 5 min
     res.status(200).json({
       message: "Logged in successfully!",
       user: {
@@ -121,17 +111,13 @@ module.exports.loginUser = async (req, res) => {
   }
 };
 
-//refresh
+// Refresh access token
 module.exports.refreshAccessToken = async (req, res) => {
   try {
-    console.log(
-      "----------------------------------Refresh-------------------------------"
-    );
     const refreshToken = req.cookies.refresh_token;
     if (!refreshToken) {
       return res.status(401).json({ message: "No refresh token provided." });
     }
-
     jwt.verify(
       refreshToken,
       process.env.REFRESH_TOKEN_SECRET,
@@ -141,17 +127,16 @@ module.exports.refreshAccessToken = async (req, res) => {
             message: "Invalid or expired refresh token.",
           });
         }
-
+        // Issue new access token for 1 minute
         const newAccessToken = jwt.sign(
           { id: decoded.id },
           process.env.ACCESS_TOKEN_SECRET,
-          { expiresIn: "15m" }
+          { expiresIn: "1m" }
         );
-
         res.cookie(
           "access_token",
           newAccessToken,
-          cookieOptions(15 * 60 * 1000)
+          cookieOptions(1 * 60 * 1000)
         );
         res.status(200).json({
           message: "Access token refreshed successfully.",
@@ -167,13 +152,14 @@ module.exports.refreshAccessToken = async (req, res) => {
   }
 };
 
-// logout
+// Logout
 module.exports.logout = async (req, res) => {
   try {
     const clearOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+      path: "/",
     };
     res.clearCookie("access_token", clearOptions);
     res.clearCookie("refresh_token", clearOptions);
@@ -187,13 +173,11 @@ module.exports.logout = async (req, res) => {
   }
 };
 
-// get current user
+// Get current user
 module.exports.getCurrentUser = async (req, res) => {
   try {
     const accessToken = req.cookies.access_token;
     const refreshToken = req.cookies.refresh_token;
-    console.log("accessToken", accessToken);
-    console.log("refreshToken", refreshToken);
     if (!accessToken) {
       return res.status(401).json({ message: "Not logged in." });
     }

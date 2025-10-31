@@ -1,15 +1,11 @@
 import axios from "axios";
 
-// Base URL from environment variable
 const api = axios.create({
-  baseURL: `${import.meta.env.VITE_URL}/api`, // your backend URL
-  withCredentials: true, // send cookies with every request
+  baseURL: `${import.meta.env.VITE_URL}/api`,
+  withCredentials: true,
 });
-
-// Flag to prevent multiple refresh attempts
 let isRefreshing = false;
 let failedQueue = [];
-
 const processQueue = (error, token = null) => {
   failedQueue.forEach((prom) => {
     if (error) prom.reject(error);

@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 
 import Home from "./pages/Home";
 import Loader from "./utils/Loader";
+import ProfilePage from "./pages/ProfilePage";
 
 const GenerateSummary = lazy(() => import("./pages/GenerateSummary"));
 const ProtectedRoute = lazy(() => import("./components/ProtectedRoute"));
@@ -36,6 +37,15 @@ function App() {
               <Routes>
                 <Route element={<Home />} path="/" />
                 <Route element={<Auth />} path="/auth" />
+                <Route
+                  element={
+                    <ProtectedRoute>
+                      <ProfilePage />
+                    </ProtectedRoute>
+                  }
+                  path="/me"
+                />
+
                 <Route
                   path="/summarizer"
                   element={
