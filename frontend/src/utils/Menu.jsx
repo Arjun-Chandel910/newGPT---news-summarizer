@@ -29,7 +29,9 @@ export default function BasicMenu() {
         aria-expanded={open ? "true" : undefined}
         onClick={handleClick}
       >
-        {currentUser.username}
+        <span className="mr-2 text-transparent bg-gradient-to-r from-blue-500  via-blue-700 to-blue-500 bg-clip-text font-bold text-base">
+          {currentUser.username}
+        </span>
       </Button>
       <Menu
         id="basic-menu"

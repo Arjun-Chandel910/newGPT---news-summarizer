@@ -11,7 +11,8 @@ import Auth from "./pages/Auth";
 import Home from "./pages/Home";
 import Loader from "./utils/Loader";
 import ProfilePage from "./pages/ProfilePage";
-
+import CreateArticle from "./pages/CreateArticle";
+import History from "./pages/History";
 const GenerateSummary = lazy(() => import("./pages/GenerateSummary"));
 const ProtectedRoute = lazy(() => import("./components/ProtectedRoute"));
 
@@ -44,6 +45,22 @@ function App() {
                     </ProtectedRoute>
                   }
                   path="/me"
+                />
+                <Route
+                  element={
+                    <ProtectedRoute>
+                      <CreateArticle />
+                    </ProtectedRoute>
+                  }
+                  path="/create-article"
+                />
+                <Route
+                  element={
+                    <ProtectedRoute>
+                      <History />
+                    </ProtectedRoute>
+                  }
+                  path="/history"
                 />
 
                 <Route

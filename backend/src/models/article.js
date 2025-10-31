@@ -20,32 +20,22 @@ const articleSchema = new mongoose.Schema({
     type: String,
     enum: ["public", "private"],
     default: "private",
-    index: true, // Supports fast filtering
+    index: true,
   },
-  tags: [
-    {
-      type: String,
-      trim: true,
-    },
-  ],
   owner: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
-    index: true, // Fast filtering by user
+    index: true,
   },
   createdAt: {
     type: Date,
     default: Date.now,
-    index: true, // For sorting and profile views
+    index: true,
   },
   updatedAt: {
     type: Date,
     default: Date.now,
-  },
-  viewCount: {
-    type: Number,
-    default: 0,
   },
 });
 
