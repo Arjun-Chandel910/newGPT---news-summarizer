@@ -210,7 +210,7 @@ const AuthForm = () => {
               "&:hover": { bgcolor: "#212a3f", borderColor: "#254b73" },
             }}
             onClick={() => {
-              window.location.href = process.env.REACT_APP_LINKEDIN_OAUTH_URL;
+              // later add Oauth 
             }}
           >
             {isLogin ? "Login" : "Sign Up"} with LinkedIn

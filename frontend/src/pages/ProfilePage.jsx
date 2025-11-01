@@ -10,10 +10,11 @@ const ProfilePage = () => {
   const [summaries, setSummaries] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Sorting state
+  // sorting state
   const [articleSort, setArticleSort] = useState("desc");
   const [summarySort, setSummarySort] = useState("desc");
 
+  // fetch all articles and summaries
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -46,7 +47,7 @@ const ProfilePage = () => {
     return <Loader />;
   }
 
-  const formatDate = (dateString) =>
+  const formatDate = (dateString) => {
     dateString
       ? new Date(dateString).toLocaleDateString("en-US", {
           year: "numeric",
@@ -54,6 +55,7 @@ const ProfilePage = () => {
           day: "numeric",
         })
       : "";
+  };
 
   // Sorting
   const sortedArticles = [...articles].sort((a, b) =>
@@ -97,8 +99,9 @@ const ProfilePage = () => {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-5xl mx-auto px-4 py-8">
-        {/* Profile area */}
+        {/* profile area */}
         <div className="bg-white rounded-xl shadow-md p-6 flex flex-col md:flex-row items-center gap-6 mb-8">
+          {/* replace this with image later */}
           <div className="w-20 h-20 rounded-full bg-blue-400 flex items-center justify-center text-white text-2xl font-bold">
             {currentUser.username[0].toUpperCase()}
           </div>
@@ -121,14 +124,11 @@ const ProfilePage = () => {
                 <span className="block text-xs text-gray-500">Summaries</span>
               </div>
             </div>
-            <div className="text-xs text-gray-400 mt-2">
-              Member since {new Date().getFullYear()}
-            </div>
           </div>
         </div>
-        {/* Articles & Summaries */}
+        {/* Articles & Summaries*/}
         <div className="grid md:grid-cols-2 gap-8">
-          {/* Articles */}
+          {/*Articles*/}
           <div className="bg-white rounded-xl shadow p-5">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xl font-bold text-blue-900">Your Articles</h2>
