@@ -9,11 +9,10 @@ const Navbar = () => {
   const { currentUser } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Nav links data, "History" is included only if currentUser exists
   const navLinks = [
     { to: "/", text: "Home" },
     { to: "/summarizer", text: "Summarizer" },
-    { to: "/dashboard", text: "My Articles" },
+    { to: "/my-articles", text: "My Articles" },
   ];
   if (currentUser) {
     navLinks.push({ to: "/history", text: "History" });
@@ -21,11 +20,9 @@ const Navbar = () => {
 
   return (
     <nav className="relative bg-white/80 backdrop-blur-lg shadow-lg border-b border-neutral-200 sticky top-0 z-50">
-      {/* Left accent stripe */}
       <div className="absolute left-0 top-0 h-full w-2 bg-gradient-to-b from-blue-400 via-cyan-300 to-slate-400 rounded-r-xl shadow-md"></div>
 
       <div className="mx-auto max-w-6xl flex items-center justify-between h-[64px] md:h-[70px] px-2 md:px-8">
-        {/* Logo */}
         <div
           className="flex items-center gap-2 select-none cursor-pointer group"
           onClick={() => navigate("/")}
@@ -37,7 +34,6 @@ const Navbar = () => {
           </span>
         </div>
 
-        {/* Desktop nav links (pill) */}
         <div className="hidden md:flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-slate-50 via-blue-50 to-slate-100 shadow-inner border border-blue-100/60 gap-0">
           {navLinks.map((item, idx) => (
             <div key={item.text} className="flex items-center">
@@ -54,9 +50,7 @@ const Navbar = () => {
           ))}
         </div>
 
-        {/* Sign In/Menu & Mobile Menu Button */}
         <div className="flex items-center gap-2">
-          {/* Hamburger menu for mobile */}
           <button
             className="md:hidden flex items-center justify-center p-2 rounded-full hover:bg-blue-50 transition"
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -85,7 +79,6 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile dropdown nav */}
       {mobileOpen && (
         <div className="md:hidden absolute right-4 top-16 bg-white/90 rounded-2xl shadow-lg border border-blue-100 w-11/12 max-w-xs p-3 flex flex-col gap-1 z-50">
           {navLinks.map((item) => (
