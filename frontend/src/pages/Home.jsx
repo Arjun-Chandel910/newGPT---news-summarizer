@@ -6,7 +6,6 @@ const Home = () => {
 
   return (
     <div className="flex flex-col min-h-screen items-center justify-start bg-gradient-to-br from-blue-200 via-gray-50 to-pink-200 px-4">
-      {/* text */}
       <TypeWriter
         text={"Welcome to newsGPT"}
         className="mt-14 text-4xl font-bold bg-gradient-to-r from-blue-500 via-blue-700 to-blue-900 text-transparent bg-clip-text text-center mb-10 drop-shadow"

@@ -16,7 +16,7 @@ router.get("/", requiredUser, getAllArticles);
 
 router.get("/user/:userId", requiredUser, getArticlesByUser);
 
-router.get("/:id", getArticleById);
+router.get("/:id", requiredUser, getArticleById);
 
 router.put("/:id", requiredUser, updateArticle);
 

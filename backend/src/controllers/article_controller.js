@@ -1,7 +1,6 @@
 const Article = require("../models/article.js");
 const User = require("../models/user.js");
 
-// Helper: Check if current user exists
 async function requireExistingUser(req, res) {
   const user = await User.findById(req.userId);
   if (!user) {
@@ -15,7 +14,6 @@ async function requireExistingUser(req, res) {
 exports.createArticle = async (req, res) => {
   try {
     if (!(await requireExistingUser(req, res))) return;
-    // Accept all model fields (title, body, source, visibility, owner, tags)
     const { title, body, source, visibility } = req.body;
     if (!title || !body) {
       return res.status(400).json({ error: "Title and body are required." });
@@ -38,12 +36,18 @@ exports.createArticle = async (req, res) => {
 exports.getArticlesByUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-    const articles = await Article.find({ owner: userId });
-    res.status(200).json({ articles });
+    const limit = parseInt(req.query.limit) || 5;
+    const page = parseInt(req.query.page) || 1;
+    const sort = req.query.sort === "asc" ? 1 : -1;
+
+    const total = await Article.countDocuments({ owner: userId });
+
+    const articles = await Article.find({ owner: userId })
+      .sort({ createdAt: sort })
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    res.status(200).json({ articles, total, page, limit });
   } catch (err) {
     res
       .status(500)
@@ -90,7 +94,6 @@ exports.updateArticle = async (req, res) => {
     if (article.owner.toString() !== req.userId) {
       return res.status(403).json({ error: "Unauthorized: Not your article." });
     }
-    // Update all relevant fields
     article.title = title ?? article.title;
     article.body = body ?? article.body;
     article.source = source ?? article.source;

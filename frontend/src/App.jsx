@@ -7,9 +7,12 @@ import { AuthProvider } from "./context/AuthProvider";
 import Footer from "./components/Footer";
 import Navbar from "./components/Navbar";
 import Auth from "./pages/Auth";
-
+import ViewArticle from "./pages/ViewArticle";
+import EditArticlePage from "./pages/EditArticle";
 import Home from "./pages/Home";
 import Loader from "./utils/Loader";
+import ViewSummary from "./pages/ViewSummary";
+
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const CreateArticle = lazy(() => import("./pages/CreateArticle"));
 const History = lazy(() => import("./pages/History"));
@@ -39,6 +42,30 @@ function App() {
               <Routes>
                 <Route element={<Home />} path="/" />
                 <Route element={<Auth />} path="/auth" />
+                <Route
+                  path="/articles/:id"
+                  element={
+                    <ProtectedRoute>
+                      <ViewArticle />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/articles/edit/:id"
+                  element={
+                    <ProtectedRoute>
+                      <EditArticlePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/summaries/:id"
+                  element={
+                    <ProtectedRoute>
+                      <ViewSummary />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   element={
                     <ProtectedRoute>

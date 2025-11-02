@@ -17,7 +17,7 @@ const GenerateSummary = () => {
     try {
       const res = await api.post("/summary", {
         originalText: input,
-        user: currentUser ? currentUser.id : "6900b65279c93047c5097355",
+        user: currentUser.id,
         mode: mode.toLowerCase().replace(" ", "_"),
       });
       setSummary(res.data.summary.summaryText || "No summary returned.");
@@ -67,7 +67,7 @@ const GenerateSummary = () => {
     <div className="flex flex-col items-center min-h-[80vh] bg-gradient-to-r from-blue-50 via-gray-50 to-yellow-50 px-2 py-10">
       <div className="w-full max-w-4xl bg-white shadow-2xl rounded-2xl p-8">
         <div className="flex flex-col md:flex-row gap-8">
-          {/*input panel */}
+          {/* input panel */}
           <div className="flex-1 flex flex-col gap-4">
             <div className="text-gray-800 text-md mb-2">
               Enter your text and press{" "}
@@ -82,7 +82,7 @@ const GenerateSummary = () => {
               disabled={loading}
             />
           </div>
-          {/* summary */}
+          {/*  summary */}
           <div className="flex-1 flex flex-col gap-4">
             {/*modes*/}
             <div className="flex items-center gap-6 mb-1">
@@ -120,7 +120,7 @@ const GenerateSummary = () => {
             </div>
           </div>
         </div>
-        {/*button */}
+
         <div className="flex justify-center items-center mt-8">
           <button
             className={`bg-green-600 hover:bg-green-700 text-white text-xl font-semibold px-8 py-3 rounded-full shadow-lg transition-all ${

@@ -1,40 +1,44 @@
 import React, { useEffect, useState } from "react";
-import api from "../api/axios";
 import { useAuth } from "../context/AuthProvider";
-import { notifySuccess, notifyError } from "../utils/Toast";
+import api from "../api/axios";
 import Loader from "../utils/Loader";
+import { notifyError, notifySuccess } from "../utils/Toast";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import DeleteIcon from "@mui/icons-material/Delete";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import { useNavigate } from "react-router-dom";
 
-const History = () => {
+const PAGE_SIZE = 5;
+
+const SummariesPage = () => {
   const { currentUser } = useAuth();
   const [summaries, setSummaries] = useState([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [sort, setSort] = useState("desc");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchSummaries = async () => {
+      setLoading(true);
       try {
-        const res = await api.get(`/summary/user/${currentUser.id}`);
-        setSummaries(
-          Array.isArray(res.data) ? res.data : res.data.summaries || []
+        const res = await api.get(
+          `/summary/user/${currentUser.id}?limit=${PAGE_SIZE}&page=${page}&sort=${sort}`
         );
-      } catch {
-        notifyError("Couldn't load your summary history.");
+        setSummaries(res.data.summaries || []);
+        setTotal(res.data.total || 0);
+      } catch (err) {
+        notifyError("Failed to fetch summaries.");
       } finally {
         setLoading(false);
       }
     };
     if (currentUser) fetchSummaries();
-  }, [currentUser]);
+  }, [currentUser, page, sort]);
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this summary forever?")) return;
-    try {
-      await api.delete(`/summary/${id}`);
-      setSummaries(summaries.filter((s) => s._id !== id));
-      notifySuccess("Summary deleted.");
-    } catch {
-      notifyError("Delete failed. Try again later.");
-    }
-  };
+  const pageCount = Math.ceil(total / PAGE_SIZE);
 
   const formatDate = (dateString) =>
     dateString
@@ -45,51 +49,127 @@ const History = () => {
         })
       : "";
 
-  if (loading) return <Loader />;
+  // Delete Summary
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this summary?"))
+      return;
+    try {
+      await api.delete(`/summary/${id}`);
+      setSummaries((prev) => prev.filter((s) => s._id !== id));
+      notifySuccess("Deleted summary!");
+    } catch {
+      notifyError("Could not delete summary.");
+    }
+  };
+
+  // View Summary
+  const handleView = (id) => {
+    navigate(`/summaries/${id}`);
+  };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10 px-2">
-      <div className="max-w-lg mx-auto bg-white rounded-xl shadow p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-3">Your Summaries</h2>
-        {summaries.length === 0 ? (
-          <div className="text-gray-400 text-center py-12">
-            No summaries generated yet.
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 py-8 px-2">
+      <div className="max-w-3xl mx-auto">
+        <div className="flex items-center justify-between mb-7">
+          <h1 className="text-2xl font-bold text-purple-900">My Summaries</h1>
+          <select
+            className="border rounded px-2 py-1 text-sm"
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+          >
+            <option value="desc">Newest first</option>
+            <option value="asc">Oldest first</option>
+          </select>
+        </div>
+        {loading ? (
+          <Loader />
+        ) : summaries.length === 0 ? (
+          <div className="text-gray-400 text-center py-16">
+            No summaries found. Start by generating one!
           </div>
         ) : (
-          <ul className="divide-y divide-gray-100">
-            {summaries
-              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-              .map((summary) => (
-                <li key={summary._id} className="py-4 flex flex-col gap-2">
-                  <div className="font-medium text-gray-800">
-                    {summary.summaryText.length > 90
-                      ? summary.summaryText.slice(0, 88) + "..."
-                      : summary.summaryText}
+          <ul className="space-y-5">
+            {summaries.map((summary) => (
+              <li
+                key={summary._id}
+                className="bg-white shadow-md rounded-lg p-5 hover:bg-purple-50 border border-purple-100 transition group"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="font-semibold text-purple-800 truncate">
+                    {summary.summaryText.slice(0, 70)}
+                    {summary.summaryText.length > 70 ? "..." : ""}
                   </div>
-                  <div className="text-xs text-gray-500">
-                    <span className="font-semibold mr-1">Source:</span>
-                    {summary.originalText.length > 50
-                      ? summary.originalText.slice(0, 47) + "..."
-                      : summary.originalText}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-400">
-                      {formatDate(summary.createdAt)}
-                    </span>
-                    <button
-                      onClick={() => handleDelete(summary._id)}
-                      className="bg-red-100 text-red-600 hover:bg-red-200 rounded px-3 py-1 text-xs font-semibold transition"
+                  <span className="text-xs text-gray-400">
+                    {formatDate(summary.createdAt)}
+                  </span>
+                </div>
+                {summary.article && (
+                  <div className="text-xs text-blue-600 mt-2">
+                    <a
+                      className="hover:underline"
+                      href={`/articles/${summary.article}`}
                     >
-                      Delete
-                    </button>
+                      View Source Article
+                    </a>
                   </div>
-                </li>
-              ))}
+                )}
+                {/* Action Icons */}
+                <div className="flex gap-2 mt-2">
+                  <Tooltip title="View Summary">
+                    <IconButton onClick={() => handleView(summary._id)}>
+                      <VisibilityIcon sx={{ color: "#7e57c2" }} />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Delete Summary">
+                    <IconButton onClick={() => handleDelete(summary._id)}>
+                      <DeleteIcon sx={{ color: "#d32f2f" }} />
+                    </IconButton>
+                  </Tooltip>
+                </div>
+              </li>
+            ))}
           </ul>
+        )}
+
+        {/* Pagination */}
+        {pageCount > 1 && (
+          <div className="flex justify-center mt-8 gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className={`px-3 py-1 rounded bg-purple-100 text-purple-700 font-medium hover:bg-purple-200 transition ${
+                page === 1 ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
+              Prev
+            </button>
+            {[...Array(pageCount)].map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setPage(idx + 1)}
+                className={`px-3 py-1 rounded ${
+                  page === idx + 1
+                    ? "bg-purple-800 text-white"
+                    : "bg-white text-purple-900 hover:bg-purple-50"
+                } font-semibold`}
+              >
+                {idx + 1}
+              </button>
+            ))}
+            <button
+              onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+              disabled={page === pageCount}
+              className={`px-3 py-1 rounded bg-purple-100 text-purple-700 font-medium hover:bg-purple-200 transition ${
+                page === pageCount ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
+              Next
+            </button>
+          </div>
         )}
       </div>
     </div>
   );
 };
 
-export default History;
+export default SummariesPage;

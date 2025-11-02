@@ -4,7 +4,6 @@ const {
   createSummary,
   getSummariesByUser,
   getSummaryById,
-
   deleteSummary,
 } = require("../controllers/summary_controller.js");
 const { requiredUser } = require("../middleware/auth_middleware.js");

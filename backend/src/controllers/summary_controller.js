@@ -1,8 +1,8 @@
 const Summary = require("../models/summary.js");
 const User = require("../models/user.js");
+const mongoose = require("mongoose");
 require("dotenv").config();
 const { InferenceClient } = require("@huggingface/inference");
-
 async function getValidatedUser(req, res) {
   if (!req.userId) {
     res.status(401).json({ error: "User not authenticated." });
@@ -40,6 +40,7 @@ exports.createSummary = async (req, res) => {
       message: "Summary created successfully",
       summary,
     });
+    console.log("summary");
   } catch (err) {
     res
       .status(500)
@@ -62,16 +63,31 @@ exports.getAllSummaries = async (req, res) => {
 // Get summaries by user
 exports.getSummariesByUser = async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId);
-    if (!user) {
-      return res.status(404).json({ error: "Invalid User" });
+    const { userId } = req.params;
+    const limit = Number(req.query.limit) > 0 ? parseInt(req.query.limit) : 5;
+    const page = Number(req.query.page) > 0 ? parseInt(req.query.page) : 1;
+    const sort = req.query.sort === "asc" ? 1 : -1;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: "Invalid user id" });
     }
-    const summaries = await Summary.find({ user: req.params.userId });
-    res.status(200).json({ summaries });
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const total = await Summary.countDocuments({ user: userId });
+
+    const summaries = await Summary.find({ user: userId })
+      .sort({ createdAt: sort })
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    res.status(200).json({ summaries, total, page, limit });
   } catch (err) {
-    res
-      .status(500)
-      .json({ error: "Failed to get summaries", message: err.message });
+    res.status(500).json({
+      error: "Failed to get summaries for user",
+      message: err.message,
+    });
   }
 };
 
