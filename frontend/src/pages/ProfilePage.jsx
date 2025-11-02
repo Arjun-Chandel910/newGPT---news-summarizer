@@ -19,7 +19,7 @@ const ProfilePage = () => {
     const fetchData = async () => {
       try {
         const [articlesRes, summariesRes] = await Promise.all([
-          api.get("/article"),
+          api.get(`/article/user/${currentUser.id}`),
           api.get(`/summary/user/${currentUser.id}`),
         ]);
         setArticles(
@@ -99,7 +99,6 @@ const ProfilePage = () => {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-5xl mx-auto px-4 py-8">
-        {/* profile area */}
         <div className="bg-white rounded-xl shadow-md p-6 flex flex-col md:flex-row items-center gap-6 mb-8">
           {/* replace this with image later */}
           <div className="w-20 h-20 rounded-full bg-blue-400 flex items-center justify-center text-white text-2xl font-bold">
@@ -126,7 +125,6 @@ const ProfilePage = () => {
             </div>
           </div>
         </div>
-        {/* Articles & Summaries*/}
         <div className="grid md:grid-cols-2 gap-8">
           {/*Articles*/}
           <div className="bg-white rounded-xl shadow p-5">

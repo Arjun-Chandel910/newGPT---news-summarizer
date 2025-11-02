@@ -1,5 +1,4 @@
 import axios from "axios";
-
 const api = axios.create({
   baseURL: `${import.meta.env.VITE_URL}/api`,
   withCredentials: true,
@@ -27,13 +26,12 @@ api.interceptors.response.use(
       !isAuthLogout
     ) {
       if (isRefreshing) {
-        return new Promise(function (resolve, reject) {
+        return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
           .then(() => api(originalRequest))
           .catch(Promise.reject);
       }
-
       originalRequest._retry = true;
       isRefreshing = true;
       try {
@@ -42,6 +40,7 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (err) {
         processQueue(err, null);
+        window.dispatchEvent(new Event("forceLogout"));
         return Promise.reject(err);
       } finally {
         isRefreshing = false;

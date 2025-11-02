@@ -11,7 +11,6 @@ const cookieOptions = (maxAge) => ({
   maxAge,
   path: "/",
 });
-
 // Register user
 module.exports.registerUser = async (req, res) => {
   try {
@@ -30,19 +29,22 @@ module.exports.registerUser = async (req, res) => {
       password: hashedPassword,
       email,
     });
-    // Access: 1 min, Refresh: 5 min
     const access_token = jwt.sign(
       { id: user._id },
       process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: "1m" }
+      { expiresIn: "15m" }
     );
     const refresh_token = jwt.sign(
       { id: user._id },
       process.env.REFRESH_TOKEN_SECRET,
-      { expiresIn: "5m" }
+      { expiresIn: "7d" }
     );
-    res.cookie("access_token", access_token, cookieOptions(1 * 60 * 1000)); // 1 min
-    res.cookie("refresh_token", refresh_token, cookieOptions(5 * 60 * 1000)); // 5 min
+    res.cookie("access_token", access_token, cookieOptions(15 * 60 * 1000)); // 15 min
+    res.cookie(
+      "refresh_token",
+      refresh_token,
+      cookieOptions(7 * 24 * 60 * 60 * 1000) // 7 days
+    );
     res.status(201).json({
       message: "User registered successfully",
       user: {
@@ -59,7 +61,6 @@ module.exports.registerUser = async (req, res) => {
     });
   }
 };
-
 // Login user
 module.exports.loginUser = async (req, res) => {
   try {
@@ -81,19 +82,22 @@ module.exports.loginUser = async (req, res) => {
         message: "Invalid email or password.",
       });
     }
-    // Access: 1 min, Refresh: 5 min
     const access_token = jwt.sign(
       { id: user._id },
       process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "15m" }
     );
     const refresh_token = jwt.sign(
       { id: user._id },
       process.env.REFRESH_TOKEN_SECRET,
-      { expiresIn: "5m" }
+      { expiresIn: "7d" }
     );
-    res.cookie("access_token", access_token, cookieOptions(7 * 24 * 60 * 1000)); // 1 min
-    res.cookie("refresh_token", refresh_token, cookieOptions(5 * 60 * 1000)); // 5 min
+    res.cookie("access_token", access_token, cookieOptions(15 * 60 * 1000));
+    res.cookie(
+      "refresh_token",
+      refresh_token,
+      cookieOptions(7 * 24 * 60 * 60 * 1000)
+    ); // 7 days
     res.status(200).json({
       message: "Logged in successfully!",
       user: {
@@ -110,7 +114,6 @@ module.exports.loginUser = async (req, res) => {
     });
   }
 };
-
 // Refresh access token
 module.exports.refreshAccessToken = async (req, res) => {
   try {
@@ -127,16 +130,15 @@ module.exports.refreshAccessToken = async (req, res) => {
             message: "Invalid or expired refresh token.",
           });
         }
-        // Issue new access token for 1 minute
         const newAccessToken = jwt.sign(
           { id: decoded.id },
           process.env.ACCESS_TOKEN_SECRET,
-          { expiresIn: "1m" }
+          { expiresIn: "15m" }
         );
         res.cookie(
           "access_token",
           newAccessToken,
-          cookieOptions(1 * 60 * 1000)
+          cookieOptions(15 * 60 * 1000)
         );
         res.status(200).json({
           message: "Access token refreshed successfully.",
@@ -151,7 +153,6 @@ module.exports.refreshAccessToken = async (req, res) => {
     });
   }
 };
-
 // Logout
 module.exports.logout = async (req, res) => {
   try {
@@ -172,12 +173,12 @@ module.exports.logout = async (req, res) => {
     });
   }
 };
-
 // Get current user
 module.exports.getCurrentUser = async (req, res) => {
   try {
     const accessToken = req.cookies.access_token;
     const refreshToken = req.cookies.refresh_token;
+
     if (!accessToken) {
       return res.status(401).json({ message: "Not logged in." });
     }

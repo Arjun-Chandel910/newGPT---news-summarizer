@@ -8,27 +8,29 @@ import { useNavigate } from "react-router-dom";
 
 const AuthForm = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({ username: "", email: "", password: "" });
   const [submitting, setSubmitting] = useState(false);
   const { login, signup, refreshUser } = useAuth();
 
   const navigate = useNavigate();
   const handleChange = (e) =>
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     try {
       if (isLogin) {
         const res = await login({ email: form.email, password: form.password });
-        notifySuccess(res.message || "Login successfull!");
+        notifySuccess(res.message || "Login successful!");
         navigate("/");
       } else {
         const res = await signup({
-          name: form.name,
+          username: form.username,
           email: form.email,
           password: form.password,
         });
+        console.log("signup", form.username, form.email, form.password);
         notifySuccess(res.message || "Sign up successful!");
         setIsLogin(true);
         navigate("/");
@@ -76,13 +78,13 @@ const AuthForm = () => {
         >
           {!isLogin && (
             <TextField
-              label="Name"
-              name="name"
+              label="Username"
+              name="username"
               variant="outlined"
               fullWidth
               required
               size="small"
-              value={form.name}
+              value={form.username}
               onChange={handleChange}
               InputProps={{
                 sx: {
@@ -167,7 +169,6 @@ const AuthForm = () => {
           </Button>
         </form>
 
-        {/* Minimal divider and social buttons */}
         <Box textAlign="center" my={2}>
           <Typography color="#aaa" fontSize="0.95rem">
             or
@@ -190,7 +191,7 @@ const AuthForm = () => {
               "&:hover": { bgcolor: "#222a40", borderColor: "#fcc302" },
             }}
             onClick={() => {
-              window.location.href = process.env.REACT_APP_GOOGLE_OAUTH_URL;
+              // add Oauth later
             }}
           >
             {isLogin ? "Login" : "Sign Up"} with Google
@@ -210,7 +211,7 @@ const AuthForm = () => {
               "&:hover": { bgcolor: "#212a3f", borderColor: "#254b73" },
             }}
             onClick={() => {
-              // later add Oauth 
+              // later add Oauth
             }}
           >
             {isLogin ? "Login" : "Sign Up"} with LinkedIn
