@@ -3,7 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user.js");
 
-// Cookie options helper
+// cookie options
 const cookieOptions = (maxAge) => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",

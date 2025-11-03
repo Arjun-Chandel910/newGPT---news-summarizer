@@ -1,7 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-require("dotenv").config();
 const authRoutes = require("./src/routes/auth_route.js");
 const articleRoutes = require("./src/routes/article_route.js");
 const summaryRoutes = require("./src/routes/summary_route.js");
@@ -31,6 +30,4 @@ app.get("/", (req, res) => {
   res.send("Backend is running!");
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+module.exports = app;
