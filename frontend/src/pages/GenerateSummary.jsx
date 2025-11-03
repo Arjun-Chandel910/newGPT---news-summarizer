@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthProvider";
-const BOX_HEIGHT = "320px";
+const BOX_HEIGHT = "240px";
 const MODES = ["Paragraph", "Bullet Points"];
+
 const GenerateSummary = () => {
   const [input, setInput] = useState("");
   const [summary, setSummary] = useState("");
@@ -63,6 +64,7 @@ const GenerateSummary = () => {
     }
     return <span className="whitespace-pre-line">{summary}</span>;
   };
+
   return (
     <div className="flex flex-col items-center min-h-[80vh] bg-gradient-to-r from-blue-50 via-gray-50 to-yellow-50 px-2 py-10">
       <div className="w-full max-w-4xl bg-white shadow-2xl rounded-2xl p-8">
@@ -82,7 +84,7 @@ const GenerateSummary = () => {
               disabled={loading}
             />
           </div>
-          {/*  summary */}
+          {/*  summary */}
           <div className="flex-1 flex flex-col gap-4">
             {/*modes*/}
             <div className="flex items-center gap-6 mb-1">

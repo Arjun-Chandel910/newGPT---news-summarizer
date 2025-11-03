@@ -6,7 +6,6 @@ import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import { useNavigate } from "react-router-dom";
 import { notifySuccess } from "../utils/Toast";
 
@@ -63,6 +62,7 @@ const ArticlesPage = () => {
     navigate(`/articles/edit/${id}`);
   };
 
+  //  navigation on card click
   const handleView = (id) => {
     navigate(`/articles/${id}`);
   };
@@ -97,16 +97,6 @@ const ArticlesPage = () => {
               >
                 <div className="flex justify-between items-center mb-1">
                   <div className="flex items-center gap-2">
-                    <Tooltip title="View Article">
-                      <IconButton
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleView(article._id);
-                        }}
-                      >
-                        <VisibilityIcon sx={{ color: "#1976d2" }} />
-                      </IconButton>
-                    </Tooltip>
                     <span className="font-semibold text-lg text-blue-800 truncate">
                       {article.title}
                     </span>

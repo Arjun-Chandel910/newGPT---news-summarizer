@@ -5,11 +5,9 @@ import Loader from "../utils/Loader";
 import { notifyError, notifySuccess } from "../utils/Toast";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
-import DeleteIcon from "@mui/icons-material/Delete";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import { useNavigate } from "react-router-dom";
-
 const PAGE_SIZE = 5;
+import DeleteIcon from "@mui/icons-material/Delete";
+import { useNavigate } from "react-router-dom";
 
 const SummariesPage = () => {
   const { currentUser } = useAuth();
@@ -49,7 +47,6 @@ const SummariesPage = () => {
         })
       : "";
 
-  // Delete Summary
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this summary?"))
       return;
@@ -62,7 +59,6 @@ const SummariesPage = () => {
     }
   };
 
-  // View Summary
   const handleView = (id) => {
     navigate(`/summaries/${id}`);
   };
@@ -92,40 +88,43 @@ const SummariesPage = () => {
             {summaries.map((summary) => (
               <li
                 key={summary._id}
-                className="bg-white shadow-md rounded-lg p-5 hover:bg-purple-50 border border-purple-100 transition group"
+                className="bg-white shadow-md rounded-lg p-5 hover:bg-purple-50 border border-purple-100 transition group cursor-pointer flex flex-col"
+                onClick={() => handleView(summary._id)}
               >
                 <div className="flex items-center justify-between">
                   <div className="font-semibold text-purple-800 truncate">
                     {summary.summaryText.slice(0, 70)}
                     {summary.summaryText.length > 70 ? "..." : ""}
                   </div>
-                  <span className="text-xs text-gray-400">
-                    {formatDate(summary.createdAt)}
-                  </span>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-400">
+                      {formatDate(summary.createdAt)}
+                    </span>
+                    <Tooltip title="Delete Summary">
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(summary._id);
+                        }}
+                        style={{ marginLeft: "12px" }}
+                      >
+                        <DeleteIcon sx={{ color: "#d32f2f" }} />
+                      </IconButton>
+                    </Tooltip>
+                  </div>
                 </div>
                 {summary.article && (
                   <div className="text-xs text-blue-600 mt-2">
                     <a
                       className="hover:underline"
                       href={`/articles/${summary.article}`}
+                      onClick={(e) => e.stopPropagation()}
                     >
                       View Source Article
                     </a>
                   </div>
                 )}
-                {/* Action Icons */}
-                <div className="flex gap-2 mt-2">
-                  <Tooltip title="View Summary">
-                    <IconButton onClick={() => handleView(summary._id)}>
-                      <VisibilityIcon sx={{ color: "#7e57c2" }} />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Delete Summary">
-                    <IconButton onClick={() => handleDelete(summary._id)}>
-                      <DeleteIcon sx={{ color: "#d32f2f" }} />
-                    </IconButton>
-                  </Tooltip>
-                </div>
               </li>
             ))}
           </ul>
