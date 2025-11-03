@@ -3,6 +3,9 @@ const User = require("../models/user.js");
 const mongoose = require("mongoose");
 require("dotenv").config();
 const { InferenceClient } = require("@huggingface/inference");
+const redisClient = require("../../redisClient.js");
+
+// Validate user helper
 async function getValidatedUser(req, res) {
   if (!req.userId) {
     res.status(401).json({ error: "User not authenticated." });
@@ -32,10 +35,17 @@ exports.createSummary = async (req, res) => {
       provider: "hf-inference",
     });
     const summary = await Summary.create({
-      originalText: originalText,
+      originalText,
       summaryText: summaryOutput.summary_text,
       user: req.userId,
     });
+
+    // delete all redis keys w.r.t. pagination
+    const keys = await redisClient.keys(`user:${req.userId}:summaries:page:*`);
+    for (const k of keys) {
+      await redisClient.del(k);
+    }
+
     res.status(201).json({
       message: "Summary created successfully",
       summary,
@@ -75,14 +85,22 @@ exports.getSummariesByUser = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    const total = await Summary.countDocuments({ user: userId });
+    // Compose cache key for this user's paginated view
+    const cacheKey = `user:${userId}:summaries:page:${page}:limit:${limit}:sort:${sort}`;
+    const cached = await redisClient.get(cacheKey);
+    if (cached) {
+      return res.status(200).json(JSON.parse(cached));
+    }
 
+    const total = await Summary.countDocuments({ user: userId });
     const summaries = await Summary.find({ user: userId })
       .sort({ createdAt: sort })
       .skip((page - 1) * limit)
       .limit(limit);
 
-    res.status(200).json({ summaries, total, page, limit });
+    const response = { summaries, total, page, limit };
+    await redisClient.setEx(cacheKey, 600, JSON.stringify(response));
+    res.status(200).json(response);
   } catch (err) {
     res.status(500).json({
       error: "Failed to get summaries for user",
@@ -119,6 +137,14 @@ exports.deleteSummary = async (req, res) => {
       return res.status(403).json({ error: "Unauthorized: Not your summary." });
     }
     await Summary.findByIdAndDelete(req.params.id);
+
+    // delete all redis keys w.r.t. pagination
+
+    const keys = await redisClient.keys(`user:${req.userId}:summaries:page:*`);
+    for (const k of keys) {
+      await redisClient.del(k);
+    }
+
     res.status(200).json({ message: "Summary deleted" });
   } catch (err) {
     res

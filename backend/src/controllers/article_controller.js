@@ -1,6 +1,9 @@
 const Article = require("../models/article.js");
 const User = require("../models/user.js");
 
+//
+const redisClient = require("../../redisClient.js");
+
 async function requireExistingUser(req, res) {
   const user = await User.findById(req.userId);
   if (!user) {
@@ -25,6 +28,12 @@ exports.createArticle = async (req, res) => {
       visibility: visibility || "private",
       owner: req.userId,
     });
+    // delete all redis keys w.r.t. pagination
+    const keys = await redisClient.keys(`user:${req.userId}:articles:page:*`);
+    for (const k of keys) {
+      await redisClient.del(k);
+    }
+
     res.status(201).json({ message: "Article created successfully", article });
   } catch (err) {
     res
@@ -39,15 +48,23 @@ exports.getArticlesByUser = async (req, res) => {
     const limit = parseInt(req.query.limit) || 5;
     const page = parseInt(req.query.page) || 1;
     const sort = req.query.sort === "asc" ? 1 : -1;
-
+    //  redis key for pagination
+    const cacheKey = `user:${userId}:articles:page:${page}:limit:${limit}:sort:${sort}`;
+    const cached = await redisClient.get(cacheKey);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      return res.status(200).json(parsed);
+    }
     const total = await Article.countDocuments({ owner: userId });
-
     const articles = await Article.find({ owner: userId })
       .sort({ createdAt: sort })
       .skip((page - 1) * limit)
       .limit(limit);
 
-    res.status(200).json({ articles, total, page, limit });
+    const response = { articles, total, page, limit };
+    await redisClient.setEx(cacheKey, 600, JSON.stringify(response));
+
+    res.status(200).json(response);
   } catch (err) {
     res
       .status(500)
@@ -67,14 +84,25 @@ exports.getAllArticles = async (req, res) => {
   }
 };
 
-// Get single article by ID
+// Get single article by Id
 exports.getArticleById = async (req, res) => {
   try {
-    const article = await Article.findById(req.params.id);
+    const id = req.params.id;
+
+    // checks cache first
+    const cached = await redisClient.get(`article:${id}`);
+    if (cached) {
+      return res
+        .status(200)
+        .json({ article: JSON.parse(cached), cached: true });
+    }
+    const article = await Article.findById(id);
     if (!article) {
       return res.status(404).json({ error: "Article not found" });
     }
-    res.status(200).json({ article });
+    await redisClient.setEx(`article:${id}`, 600, JSON.stringify(article));
+
+    return res.status(200).json({ article });
   } catch (err) {
     res
       .status(500)
@@ -99,6 +127,13 @@ exports.updateArticle = async (req, res) => {
     article.source = source ?? article.source;
     article.visibility = visibility ?? article.visibility;
     await article.save();
+
+    //delete all redis keys w.r.t pagination
+    const keys = await redisClient.keys(`user:${req.userId}:articles:page:*`);
+    for (const k of keys) {
+      await redisClient.del(k);
+    }
+
     res.status(200).json({ message: "Article updated", article });
   } catch (err) {
     res
@@ -119,6 +154,12 @@ exports.deleteArticle = async (req, res) => {
       return res.status(403).json({ error: "Unauthorized: Not your article." });
     }
     await Article.findByIdAndDelete(req.params.id);
+    //delete all redis keys w.r.t pagination
+    const keys = await redisClient.keys(`user:${req.userId}:articles:page:*`);
+    for (const k of keys) {
+      await redisClient.del(k);
+    }
+
     res.status(200).json({ message: "Article deleted" });
   } catch (err) {
     res
