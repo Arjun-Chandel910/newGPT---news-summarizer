@@ -59,7 +59,6 @@ const ProfilePage = () => {
             <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow mb-1">
               {currentUser.username}
             </h1>
-            <p className="text-base text-indigo-100 mb-2">News Contributor</p>
             <div className="flex gap-6 mt-2">
               <div>
                 <div className="text-lg text-white/90 font-semibold">

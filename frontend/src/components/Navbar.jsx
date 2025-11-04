@@ -10,7 +10,6 @@ const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navLinks = [
-    { to: "/", text: "Home" },
     { to: "/summarizer", text: "Summarizer" },
     { to: "/my-articles", text: "My Articles" },
   ];

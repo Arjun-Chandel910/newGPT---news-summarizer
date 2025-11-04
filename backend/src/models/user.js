@@ -15,6 +15,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       select: false,
     },
+    isAdmin: {
+      type: Boolean,
+      default: false,
+    },
     providers: {
       google: {
         id: { type: String },

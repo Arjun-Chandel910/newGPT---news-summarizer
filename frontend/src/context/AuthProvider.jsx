@@ -14,6 +14,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials) => {
     try {
       const res = await api.post("/auth/login", credentials);
+      // console.log(res.data.user);
       setCurrentUser(res.data.user);
       return res.data;
     } catch (err) {
@@ -21,6 +22,7 @@ export const AuthProvider = ({ children }) => {
       throw err;
     }
   };
+  // console.log("currentUser", currentUser);
 
   // Signup
   const signup = async (credentials) => {

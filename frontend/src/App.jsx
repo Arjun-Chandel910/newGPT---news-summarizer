@@ -12,6 +12,8 @@ import EditArticlePage from "./pages/EditArticle";
 import Home from "./pages/Home";
 import Loader from "./utils/Loader";
 import ViewSummary from "./pages/ViewSummary";
+import AdminRoute from "./components/adminRoute";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const CreateArticle = lazy(() => import("./pages/CreateArticle"));
@@ -97,6 +99,14 @@ function App() {
                     </ProtectedRoute>
                   }
                   path="/history"
+                />
+                <Route
+                  element={
+                    <AdminRoute>
+                      <AdminDashboard />
+                    </AdminRoute>
+                  }
+                  path="/admin"
                 />
 
                 <Route
