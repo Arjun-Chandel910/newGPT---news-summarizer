@@ -2,12 +2,14 @@ const chai = require("chai");
 const expect = chai.expect;
 const request = require("supertest");
 const app = require("../app.js");
+const User = require("../src/models/user.js");
 
 describe("Authentication/User routes", function () {
+  this.timeout(10000);
   let agent = request.agent(app);
   const signupData = {
-    username: "testuser3",
-    email: "testuser3@example.com",
+    username: "testuser11",
+    email: "testuser11@example.com",
     password: "supersecret123",
   };
   let cookies;
@@ -31,6 +33,7 @@ describe("Authentication/User routes", function () {
     expect(cookies.some((c) => c.startsWith("access_token"))).to.be.true;
     expect(cookies.some((c) => c.startsWith("refresh_token"))).to.be.true;
   });
+
   it("should not register with missing fields", async function () {
     const res = await agent
       .post("/api/auth/signup")
@@ -75,7 +78,7 @@ describe("Authentication/User routes", function () {
         password: "3jadsfl",
       })
       .expect(401);
-    expect(res.body).to.have.property("message", "Invalid email or password.");
+    expect(res.body).to.have.property("error", "Invalid email or password.");
   });
 
   it("should get current user with access token", async function () {
@@ -114,5 +117,9 @@ describe("Authentication/User routes", function () {
       .to.be.true;
     expect(res.headers["set-cookie"].some((c) => c.includes("refresh_token=;")))
       .to.be.true;
+  });
+
+  after(async function () {
+    await User.deleteOne({ email: signupData.email });
   });
 });

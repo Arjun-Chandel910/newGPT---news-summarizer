@@ -41,25 +41,20 @@ function AdminDashboard() {
     if (activeTab === "summaries") fetchSummaries();
   }, [articlesPage, summariesPage, order, activeTab]);
 
-  // FIXED: Remove from array immediately, then delete from backend
   const handleDeleteArticle = async (id) => {
     try {
-      // Step 1: Remove from UI immediately (optimistic update)
       const updatedArticles = articles.filter((article) => article._id !== id);
       setArticles(updatedArticles);
       setArticlesTotal((prev) => prev - 1);
 
-      // Step 2: Delete from backend
       await api.delete(`/admin/article/${id}`);
       notifySuccess("Article deleted!");
 
-      // Step 3: If page is now empty and not on first page, go back
       if (updatedArticles.length === 0 && articlesPage > 1) {
         setArticlesPage((page) => page - 1);
       }
     } catch (error) {
       console.error("Error deleting article:", error);
-      // Refetch on error to restore correct state
       api
         .get(
           `/admin/articles?limit=${limit}&page=${articlesPage}&sort=${order}`
@@ -73,24 +68,20 @@ function AdminDashboard() {
 
   const handleDeleteSummary = async (id) => {
     try {
-      // Step 1: Remove from UI immediately (optimistic update)
       const updatedSummaries = summaries.filter(
         (summary) => summary._id !== id
       );
       setSummaries(updatedSummaries);
       setSummariesTotal((prev) => prev - 1);
 
-      // Step 2: Delete from backend
       await api.delete(`/admin/summary/${id}`);
       notifySuccess("Summary deleted!");
 
-      // Step 3: If page is now empty and not on first page, go back
       if (updatedSummaries.length === 0 && summariesPage > 1) {
         setSummariesPage((page) => page - 1);
       }
     } catch (error) {
       console.error("Error deleting summary:", error);
-      // Refetch on error to restore correct state
       api
         .get(
           `/admin/summaries?limit=${limit}&page=${summariesPage}&sort=${order}`

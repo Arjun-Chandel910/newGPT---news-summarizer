@@ -6,18 +6,40 @@ import { useAuth } from "../context/AuthProvider";
 import { notifyError, notifySuccess } from "../utils/Toast.js";
 import { useNavigate } from "react-router-dom";
 
+const emailRegex = /\S+@\S+\.\S+/;
+
 const AuthForm = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ username: "", email: "", password: "" });
+  const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
-  const { login, signup, refreshUser } = useAuth();
+  const { login, signup } = useAuth();
 
   const navigate = useNavigate();
-  const handleChange = (e) =>
+
+  // Validation function
+  const validate = () => {
+    let errs = {};
+    if (!isLogin && !form.username.trim()) errs.username = "Username required";
+    else if (!isLogin && form.username.length < 3)
+      errs.username = "Username too short";
+    if (!form.email.trim()) errs.email = "Email required";
+    else if (!emailRegex.test(form.email)) errs.email = "Email invalid";
+    if (!form.password) errs.password = "Password required";
+    else if (form.password.length < 6)
+      errs.password = "Password must be at least 6 chars";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleChange = (e) => {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+    setErrors((errs) => ({ ...errs, [e.target.name]: undefined }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validate()) return;
     setSubmitting(true);
     try {
       if (isLogin) {
@@ -30,14 +52,14 @@ const AuthForm = () => {
           email: form.email,
           password: form.password,
         });
-        console.log("signup", form.username, form.email, form.password);
         notifySuccess(res.message || "Sign up successful!");
         setIsLogin(true);
         navigate("/");
       }
     } catch (err) {
       notifyError(
-        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+          err?.response?.data?.message ||
           "Authentication error. Please try again."
       );
     } finally {
@@ -77,26 +99,30 @@ const AuthForm = () => {
           onSubmit={handleSubmit}
         >
           {!isLogin && (
-            <TextField
-              label="Username"
-              name="username"
-              variant="outlined"
-              fullWidth
-              required
-              size="small"
-              value={form.username}
-              onChange={handleChange}
-              InputProps={{
-                sx: {
-                  bgcolor: "#232c49",
-                  fontSize: "1rem",
-                  color: "#fff",
-                },
-              }}
-              InputLabelProps={{
-                sx: { color: "#aaa", fontWeight: 500 },
-              }}
-            />
+            <>
+              <TextField
+                label="Username"
+                name="username"
+                variant="outlined"
+                fullWidth
+                required
+                size="small"
+                value={form.username}
+                onChange={handleChange}
+                error={!!errors.username}
+                helperText={errors.username}
+                InputProps={{
+                  sx: {
+                    bgcolor: "#232c49",
+                    fontSize: "1rem",
+                    color: "#fff",
+                  },
+                }}
+                InputLabelProps={{
+                  sx: { color: "#aaa", fontWeight: 500 },
+                }}
+              />
+            </>
           )}
           <TextField
             label="Email"
@@ -108,6 +134,8 @@ const AuthForm = () => {
             size="small"
             value={form.email}
             onChange={handleChange}
+            error={!!errors.email}
+            helperText={errors.email}
             InputProps={{
               sx: {
                 bgcolor: "#232c49",
@@ -129,6 +157,8 @@ const AuthForm = () => {
             size="small"
             value={form.password}
             onChange={handleChange}
+            error={!!errors.password}
+            helperText={errors.password}
             InputProps={{
               sx: {
                 bgcolor: "#232c49",
@@ -174,7 +204,6 @@ const AuthForm = () => {
             or
           </Typography>
         </Box>
-
         <Box display="flex" flexDirection="column" gap={1} mt={1}>
           <Button
             variant="outlined"
@@ -191,7 +220,7 @@ const AuthForm = () => {
               "&:hover": { bgcolor: "#222a40", borderColor: "#fcc302" },
             }}
             onClick={() => {
-              // add Oauth later
+              /* add Oauth later */
             }}
           >
             {isLogin ? "Login" : "Sign Up"} with Google
@@ -211,13 +240,12 @@ const AuthForm = () => {
               "&:hover": { bgcolor: "#212a3f", borderColor: "#254b73" },
             }}
             onClick={() => {
-              // later add Oauth
+              /* add Oauth later */
             }}
           >
             {isLogin ? "Login" : "Sign Up"} with LinkedIn
           </Button>
         </Box>
-
         <Typography
           sx={{
             textAlign: "center",
@@ -226,7 +254,7 @@ const AuthForm = () => {
             mt: 2,
           }}
         >
-          {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+          {isLogin ? "Don't have an account?" : "Already have an account?"}
           <Link
             component="button"
             underline="hover"

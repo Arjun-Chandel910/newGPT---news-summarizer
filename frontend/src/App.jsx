@@ -12,7 +12,7 @@ import EditArticlePage from "./pages/EditArticle";
 import Home from "./pages/Home";
 import Loader from "./utils/Loader";
 import ViewSummary from "./pages/ViewSummary";
-import AdminRoute from "./components/adminRoute";
+import AdminRoute from "./components/AdminRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));

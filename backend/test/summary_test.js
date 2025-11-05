@@ -4,15 +4,17 @@ const request = require("supertest");
 const app = require("../app.js");
 const mongoose = require("mongoose");
 
+const User = require("../src/models/user.js");
+
 describe("Summary Routes", function () {
-  this.timeout(10000); // hugging face api is taking more time so increasing the time
+  this.timeout(13000); // hugging face api is taking more time so increasing the time
   let agent = request.agent(app);
   let cookies;
   let createdSummaryId;
   let testUserId;
   let testUser = {
-    username: "summaryuser3",
-    email: "summaryuser3@test.com",
+    username: "summaryuser9",
+    email: "summaryuser9@test.com",
     password: "summarypass",
   };
 
@@ -95,5 +97,10 @@ describe("Summary Routes", function () {
       .post("/api/summary")
       .send({ originalText: "Unauthenticated test text." })
       .expect(401);
+  });
+
+  // delete the test user
+  after(async function () {
+    await User.deleteOne({ email: testUser.email });
   });
 });

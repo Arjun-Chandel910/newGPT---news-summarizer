@@ -11,13 +11,33 @@ const cookieOptions = (maxAge) => ({
   maxAge,
   path: "/",
 });
+
+const isValidEmail = (email) => /\S+@\S+\.\S+/.test(email);
+const passwordRegex = /.{6,}/;
+
 // Register user
 module.exports.registerUser = async (req, res) => {
   try {
     const { password, username, email } = req.body;
+
+    // Field validation
     if (!username || !email || !password) {
       return res.status(400).json({ error: "All fields are required!" });
     }
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ error: "Invalid email address!" });
+    }
+    if (!passwordRegex.test(password)) {
+      return res
+        .status(400)
+        .json({ error: "Password must be at least 6 characters!" });
+    }
+    if (!/^.{3,}$/.test(username)) {
+      return res
+        .status(400)
+        .json({ error: "Username must be at least 3 characters!" });
+    }
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ error: "User already exists!" });
@@ -61,25 +81,36 @@ module.exports.registerUser = async (req, res) => {
     });
   }
 };
+
 // Login user
 module.exports.loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
+
     if (!email || !password) {
-      return res.status(400).json({
-        message: "Email and password are required.",
-      });
+      return res
+        .status(400)
+        .json({ error: "Email and password are required." });
     }
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ error: "Invalid email address." });
+    }
+    if (!passwordRegex.test(password)) {
+      return res
+        .status(400)
+        .json({ error: "Password must be at least 6 characters." });
+    }
+
     const user = await User.findOne({ email }).select("+password");
     if (!user || !user.password) {
       return res.status(401).json({
-        message: "Invalid email or password.",
+        error: "Invalid email or password.",
       });
     }
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({
-        message: "Invalid email or password.",
+        error: "Invalid email or password.",
       });
     }
     const access_token = jwt.sign(
