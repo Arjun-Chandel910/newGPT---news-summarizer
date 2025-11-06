@@ -12,8 +12,10 @@ const cookieOptions = (maxAge) => ({
   path: "/",
 });
 
-const isValidEmail = (email) => /\S+@\S+\.\S+/.test(email);
-const passwordRegex = /.{6,}/;
+const usernameRegex = /^[a-zA-Z0-9_-]{3,20}$/;
+const passwordRegex =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,64}$/;
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Register user
 module.exports.registerUser = async (req, res) => {
@@ -24,23 +26,44 @@ module.exports.registerUser = async (req, res) => {
     if (!username || !email || !password) {
       return res.status(400).json({ error: "All fields are required!" });
     }
-    if (!isValidEmail(email)) {
-      return res.status(400).json({ error: "Invalid email address!" });
-    }
-    if (!passwordRegex.test(password)) {
-      return res
-        .status(400)
-        .json({ error: "Password must be at least 6 characters!" });
-    }
-    if (!/^.{3,}$/.test(username)) {
-      return res
-        .status(400)
-        .json({ error: "Username must be at least 3 characters!" });
+
+    // Username validation
+    if (!usernameRegex.test(username.trim())) {
+      return res.status(400).json({
+        error:
+          "Username must be 3-20 characters and contain only letters, digits, underscore, or hyphen.",
+      });
     }
 
-    const existingUser = await User.findOne({ email });
+    // Email validation
+    if (!emailRegex.test(email.trim())) {
+      return res
+        .status(400)
+        .json({ error: "Please enter a valid email address." });
+    }
+
+    // Password validation
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        error:
+          "Password must be 8-64 characters and contain at least one uppercase letter, one lowercase letter, one digit, and one special character.",
+      });
+    }
+
+    // Check for existing user by email or username
+    const existingUser = await User.findOne({
+      $or: [
+        { email: email.trim().toLowerCase() },
+        { username: username.trim() },
+      ],
+    });
     if (existingUser) {
-      return res.status(400).json({ error: "User already exists!" });
+      if (existingUser.email === email.trim().toLowerCase()) {
+        return res.status(400).json({ error: "Email already exists!" });
+      }
+      if (existingUser.username === username.trim()) {
+        return res.status(400).json({ error: "Username already exists!" });
+      }
     }
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -92,13 +115,16 @@ module.exports.loginUser = async (req, res) => {
         .status(400)
         .json({ error: "Email and password are required." });
     }
-    if (!isValidEmail(email)) {
-      return res.status(400).json({ error: "Invalid email address." });
-    }
-    if (!passwordRegex.test(password)) {
+    if (!emailRegex.test(email.trim())) {
       return res
         .status(400)
-        .json({ error: "Password must be at least 6 characters." });
+        .json({ error: "Please enter a valid email address." });
+    }
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        error:
+          "Password must be 8-64 characters and contain at least one uppercase letter, one lowercase letter, one digit, and one special character.",
+      });
     }
 
     const user = await User.findOne({ email }).select("+password");

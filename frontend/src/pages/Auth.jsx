@@ -6,7 +6,10 @@ import { useAuth } from "../context/AuthProvider";
 import { notifyError, notifySuccess } from "../utils/Toast.js";
 import { useNavigate } from "react-router-dom";
 
-const emailRegex = /\S+@\S+\.\S+/;
+const usernameRegex = /^[a-zA-Z0-9_-]{3,20}$/;
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const passwordRegex =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,64}$/;
 
 const AuthForm = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -21,13 +24,16 @@ const AuthForm = () => {
   const validate = () => {
     let errs = {};
     if (!isLogin && !form.username.trim()) errs.username = "Username required";
-    else if (!isLogin && form.username.length < 3)
-      errs.username = "Username too short";
+    else if (!isLogin && !usernameRegex.test(form.username.trim()))
+      errs.username =
+        "Username must be 3-20 characters and contain only letters, digits, underscore, or hyphen";
     if (!form.email.trim()) errs.email = "Email required";
-    else if (!emailRegex.test(form.email)) errs.email = "Email invalid";
+    else if (!emailRegex.test(form.email.trim()))
+      errs.email = "Please enter a valid email address";
     if (!form.password) errs.password = "Password required";
-    else if (form.password.length < 6)
-      errs.password = "Password must be at least 6 chars";
+    else if (!passwordRegex.test(form.password))
+      errs.password =
+        "Password must be 8-64 characters and contain at least one uppercase letter, one lowercase letter, one digit, and one special character";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
