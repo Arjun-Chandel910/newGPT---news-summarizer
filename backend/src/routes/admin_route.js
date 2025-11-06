@@ -7,7 +7,11 @@ const {
   getAllArticles,
   deleteSummaryById,
   deleteArticleById,
+  makeUserAdmin,
 } = require("../controllers/admin_controller.js");
+
+// Public route to make first user admin (for setup)
+router.post("/make-admin/:userId", makeUserAdmin);
 
 router.get("/stats", requiredAdmin, getAdminStats);
 
