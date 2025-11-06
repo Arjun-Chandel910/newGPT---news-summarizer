@@ -45,6 +45,10 @@ exports.createArticle = async (req, res) => {
 exports.getArticlesByUser = async (req, res) => {
   try {
     const { userId } = req.params;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
     const limit = parseInt(req.query.limit) || 5;
     const page = parseInt(req.query.page) || 1;
     const sort = req.query.sort === "asc" ? 1 : -1;
@@ -55,8 +59,8 @@ exports.getArticlesByUser = async (req, res) => {
       const parsed = JSON.parse(cached);
       return res.status(200).json(parsed);
     }
-    const total = await Article.countDocuments({ owner: userId });
-    const articles = await Article.find({ owner: userId })
+    const total = await Article.countDocuments({ ownerName: user.username });
+    const articles = await Article.find({ ownerName: user.username })
       .sort({ createdAt: sort })
       .skip((page - 1) * limit)
       .limit(limit);
@@ -113,13 +117,18 @@ exports.getArticleById = async (req, res) => {
 // Update an article by ID
 exports.updateArticle = async (req, res) => {
   try {
-    if (!(await requireExistingUser(req, res))) return;
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res
+        .status(401)
+        .json({ error: "User not found or not authorized." });
+    }
     const { title, body, source, visibility } = req.body;
     const article = await Article.findById(req.params.id);
     if (!article) {
       return res.status(404).json({ error: "Article not found" });
     }
-    if (article.owner.toString() !== req.userId) {
+    if (article.ownerName !== user.username) {
       return res.status(403).json({ error: "Unauthorized: Not your article." });
     }
     article.title = title ?? article.title;
@@ -145,12 +154,17 @@ exports.updateArticle = async (req, res) => {
 // Delete an article by ID
 exports.deleteArticle = async (req, res) => {
   try {
-    if (!(await requireExistingUser(req, res))) return;
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res
+        .status(401)
+        .json({ error: "User not found or not authorized." });
+    }
     const article = await Article.findById(req.params.id);
     if (!article) {
       return res.status(404).json({ error: "Article not found" });
     }
-    if (article.owner.toString() !== req.userId) {
+    if (article.ownerName !== user.username) {
       return res.status(403).json({ error: "Unauthorized: Not your article." });
     }
     await Article.findByIdAndDelete(req.params.id);

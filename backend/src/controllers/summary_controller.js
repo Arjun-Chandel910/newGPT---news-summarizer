@@ -5,8 +5,7 @@ require("dotenv").config();
 const { InferenceClient } = require("@huggingface/inference");
 const redisClient = require("../../redisClient.js");
 
-// Validate user helper
-async function getValidatedUser(req, res) {
+async function validateUser(req, res) {
   if (!req.userId) {
     res.status(401).json({ error: "User not authenticated." });
     return null;
@@ -22,41 +21,49 @@ async function getValidatedUser(req, res) {
 // Create summary
 exports.createSummary = async (req, res) => {
   try {
-    const user = await getValidatedUser(req, res);
+    const user = await validateUser(req, res);
     if (!user) return;
+
     const { originalText } = req.body;
     if (!originalText) {
       return res.status(400).json({ error: "Text is required." });
     }
+
     let summaryText;
     if (process.env.NODE_ENV === "test") {
-      // Mock summary for tests
       summaryText = `Mock summary for: ${originalText}`;
-    } else {
+    } else if (process.env.HF_TOKEN) {
       const client = new InferenceClient(process.env.HF_TOKEN);
       const summaryOutput = await client.summarization({
         model: "facebook/bart-large-cnn",
         inputs: originalText,
       });
       summaryText = summaryOutput.summary_text;
+    } else {
+      summaryText = `Mock summary for: ${originalText}`;
     }
+
     const summary = await Summary.create({
       originalText,
       summaryText,
       user: req.userId,
     });
 
-    // delete all redis keys w.r.t. pagination
-    const keys = await redisClient.keys(`user:${req.userId}:summaries:page:*`);
-    for (const k of keys) {
-      await redisClient.del(k);
+    try {
+      const keys = await redisClient.keys(
+        `user:${req.userId}:summaries:page:*`
+      );
+      for (const k of keys) {
+        await redisClient.del(k);
+      }
+    } catch (redisErr) {
+      console.warn("Redis operation failed:", redisErr.message);
     }
 
     res.status(201).json({
       message: "Summary created successfully",
       summary,
     });
-    console.log("summary");
   } catch (err) {
     res
       .status(500)
@@ -91,23 +98,36 @@ exports.getSummariesByUser = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    const userObjectId = new mongoose.Types.ObjectId(userId);
+    let summaries, total;
 
-    // Compose cache key for this user's paginated view
-    const cacheKey = `user:${userId}:summaries:page:${page}:limit:${limit}:sort:${sort}`;
-    const cached = await redisClient.get(cacheKey);
-    if (cached) {
-      return res.status(200).json(JSON.parse(cached));
+    try {
+      const cacheKey = `user:${userId}:summaries:page:${page}:limit:${limit}:sort:${sort}`;
+      const cached = await redisClient.get(cacheKey);
+      if (cached) {
+        return res.status(200).json(JSON.parse(cached));
+      }
+
+      total = await Summary.countDocuments({ ownerName: user.username });
+      summaries = await Summary.find({ ownerName: user.username })
+        .sort({ createdAt: sort })
+        .skip((page - 1) * limit)
+        .limit(limit);
+
+      const response = { summaries, total, page, limit };
+      await redisClient.setEx(cacheKey, 600, JSON.stringify(response));
+    } catch (redisErr) {
+      console.warn(
+        "Redis operation failed, fetching from database:",
+        redisErr.message
+      );
+      total = await Summary.countDocuments({ ownerName: user.username });
+      summaries = await Summary.find({ ownerName: user.username })
+        .sort({ createdAt: sort })
+        .skip((page - 1) * limit)
+        .limit(limit);
     }
 
-    const total = await Summary.countDocuments({ user: userObjectId });
-    const summaries = await Summary.find({ user: userObjectId })
-      .sort({ createdAt: sort })
-      .skip((page - 1) * limit)
-      .limit(limit);
-
     const response = { summaries, total, page, limit };
-    await redisClient.setEx(cacheKey, 600, JSON.stringify(response));
     res.status(200).json(response);
   } catch (err) {
     res.status(500).json({
@@ -135,22 +155,29 @@ exports.getSummaryById = async (req, res) => {
 // Delete summary
 exports.deleteSummary = async (req, res) => {
   try {
-    const user = await getValidatedUser(req, res);
+    const user = await validateUser(req, res);
     if (!user) return;
+
     const summary = await Summary.findById(req.params.id);
     if (!summary) {
       return res.status(404).json({ error: "Summary not found" });
     }
-    if (summary.user.toString() !== req.userId) {
+
+    if (summary.ownerName !== user.username) {
       return res.status(403).json({ error: "Unauthorized: Not your summary." });
     }
+
     await Summary.findByIdAndDelete(req.params.id);
 
-    // delete all redis keys w.r.t. pagination
-
-    const keys = await redisClient.keys(`user:${req.userId}:summaries:page:*`);
-    for (const k of keys) {
-      await redisClient.del(k);
+    try {
+      const keys = await redisClient.keys(
+        `user:${req.userId}:summaries:page:*`
+      );
+      for (const k of keys) {
+        await redisClient.del(k);
+      }
+    } catch (redisErr) {
+      console.warn("Redis operation failed:", redisErr.message);
     }
 
     res.status(200).json({ message: "Summary deleted" });

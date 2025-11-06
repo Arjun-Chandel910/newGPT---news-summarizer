@@ -9,15 +9,28 @@ const summarySchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+  },
+  ownerName: {
+    type: String,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
   },
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-  },
+});
+
+summarySchema.pre("save", async function (next) {
+  if (this.user && !this.ownerName) {
+    const User = mongoose.model("User");
+    const user = await User.findById(this.user);
+    if (user) {
+      this.ownerName = user.username;
+    }
+  }
+  next();
 });
 
 module.exports = mongoose.model("Summary", summarySchema);

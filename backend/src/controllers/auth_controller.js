@@ -6,8 +6,12 @@ const User = require("../models/user.js");
 // cookie options
 const cookieOptions = (maxAge) => ({
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+  secure:
+    process.env.NODE_ENV === "production" && process.env.NODE_ENV !== "test",
+  sameSite:
+    process.env.NODE_ENV === "production" && process.env.NODE_ENV !== "test"
+      ? "None"
+      : "Lax",
   maxAge,
   path: "/",
 });
@@ -58,12 +62,7 @@ module.exports.registerUser = async (req, res) => {
       ],
     });
     if (existingUser) {
-      if (existingUser.email === email.trim().toLowerCase()) {
-        return res.status(400).json({ error: "Email already exists!" });
-      }
-      if (existingUser.username === username.trim()) {
-        return res.status(400).json({ error: "Username already exists!" });
-      }
+      return res.status(400).json({ error: "User already exists!" });
     }
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -119,12 +118,6 @@ module.exports.loginUser = async (req, res) => {
       return res
         .status(400)
         .json({ error: "Please enter a valid email address." });
-    }
-    if (!passwordRegex.test(password)) {
-      return res.status(400).json({
-        error:
-          "Password must be 8-64 characters and contain at least one uppercase letter, one lowercase letter, one digit, and one special character.",
-      });
     }
 
     const user = await User.findOne({ email }).select("+password");
@@ -216,8 +209,13 @@ module.exports.logout = async (req, res) => {
   try {
     const clearOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+      secure:
+        process.env.NODE_ENV === "production" &&
+        process.env.NODE_ENV !== "test",
+      sameSite:
+        process.env.NODE_ENV === "production" && process.env.NODE_ENV !== "test"
+          ? "None"
+          : "Lax",
       path: "/",
     };
     res.clearCookie("access_token", clearOptions);
@@ -238,31 +236,109 @@ module.exports.getCurrentUser = async (req, res) => {
     const refreshToken = req.cookies.refresh_token;
 
     if (!accessToken) {
-      return res.status(401).json({ message: "Not logged in." });
-    }
-    jwt.verify(
-      accessToken,
-      process.env.ACCESS_TOKEN_SECRET,
-      async (err, decoded) => {
-        if (err) {
-          return res.status(401).json({
-            message: "Invalid or expired token.",
-          });
-        }
-        const user = await User.findById(decoded.id);
-        if (!user) {
-          return res.status(404).json({ message: "User not found." });
-        }
-        res.status(200).json({
-          user: {
-            id: user._id,
-            username: user.username,
-            email: user.email,
-            isAdmin: user.isAdmin,
-          },
-        });
+      // Try to refresh if no access token but refresh token exists
+      if (refreshToken) {
+        jwt.verify(
+          refreshToken,
+          process.env.REFRESH_TOKEN_SECRET,
+          async (err, decoded) => {
+            if (err) {
+              return res.status(401).json({
+                message: "Invalid or expired refresh token.",
+              });
+            }
+            const newAccessToken = jwt.sign(
+              { id: decoded.id },
+              process.env.ACCESS_TOKEN_SECRET,
+              { expiresIn: "15m" }
+            );
+            res.cookie(
+              "access_token",
+              newAccessToken,
+              cookieOptions(15 * 60 * 1000)
+            );
+            // Now get the user
+            const user = await User.findById(decoded.id);
+            if (!user) {
+              return res.status(404).json({ message: "User not found." });
+            }
+            res.status(200).json({
+              user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                isAdmin: user.isAdmin,
+              },
+            });
+          }
+        );
+      } else {
+        return res.status(401).json({ message: "Not logged in." });
       }
-    );
+    } else {
+      jwt.verify(
+        accessToken,
+        process.env.ACCESS_TOKEN_SECRET,
+        async (err, decoded) => {
+          if (err) {
+            // If access token expired, try refresh
+            if (refreshToken) {
+              jwt.verify(
+                refreshToken,
+                process.env.REFRESH_TOKEN_SECRET,
+                async (refreshErr, refreshDecoded) => {
+                  if (refreshErr) {
+                    return res.status(401).json({
+                      message: "Invalid or expired refresh token.",
+                    });
+                  }
+                  const newAccessToken = jwt.sign(
+                    { id: refreshDecoded.id },
+                    process.env.ACCESS_TOKEN_SECRET,
+                    { expiresIn: "15m" }
+                  );
+                  res.cookie(
+                    "access_token",
+                    newAccessToken,
+                    cookieOptions(15 * 60 * 1000)
+                  );
+                  // Now get the user
+                  const user = await User.findById(refreshDecoded.id);
+                  if (!user) {
+                    return res.status(404).json({ message: "User not found." });
+                  }
+                  res.status(200).json({
+                    user: {
+                      id: user._id,
+                      username: user.username,
+                      email: user.email,
+                      isAdmin: user.isAdmin,
+                    },
+                  });
+                }
+              );
+            } else {
+              return res.status(401).json({
+                message: "Invalid or expired token.",
+              });
+            }
+          } else {
+            const user = await User.findById(decoded.id);
+            if (!user) {
+              return res.status(404).json({ message: "User not found." });
+            }
+            res.status(200).json({
+              user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                isAdmin: user.isAdmin,
+              },
+            });
+          }
+        }
+      );
+    }
   } catch (err) {
     console.error("GetCurrentUser error:", err);
     res.status(500).json({

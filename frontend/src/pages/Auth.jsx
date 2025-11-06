@@ -1,7 +1,5 @@
 import React, { useState } from "react";
 import { Box, Button, Card, TextField, Typography, Link } from "@mui/material";
-import GoogleIcon from "@mui/icons-material/Google";
-import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import { useAuth } from "../context/AuthProvider";
 import { notifyError, notifySuccess } from "../utils/Toast.js";
 import { useNavigate } from "react-router-dom";
@@ -77,18 +75,20 @@ const AuthForm = () => {
     <Box
       minHeight="100vh"
       display="flex"
-      alignItems="center"
+      alignItems="flex-start"
       justifyContent="center"
       bgcolor="#f8fafc"
+      pt={8}
     >
       <Card
         sx={{
-          p: 2.5,
-          borderRadius: 2.5,
-          maxWidth: 330,
+          p: 3,
+          borderRadius: 3,
+          maxWidth: 450,
           width: "100%",
-          boxShadow: "0 6px 28px 0px rgba(40,40,70,0.10)",
+          boxShadow: "0 8px 32px 0px rgba(40,40,70,0.15)",
           bgcolor: "#192340",
+          border: "1px solid rgba(255, 215, 0, 0.1)",
         }}
       >
         <Typography
@@ -205,53 +205,6 @@ const AuthForm = () => {
           </Button>
         </form>
 
-        <Box textAlign="center" my={2}>
-          <Typography color="#aaa" fontSize="0.95rem">
-            or
-          </Typography>
-        </Box>
-        <Box display="flex" flexDirection="column" gap={1} mt={1}>
-          <Button
-            variant="outlined"
-            startIcon={<GoogleIcon fontSize="small" />}
-            fullWidth
-            sx={{
-              borderRadius: 2,
-              borderColor: "#ffd700",
-              color: "#ffd700",
-              background: "#232c49",
-              fontWeight: "bold",
-              textTransform: "none",
-              fontSize: "0.97rem",
-              "&:hover": { bgcolor: "#222a40", borderColor: "#fcc302" },
-            }}
-            onClick={() => {
-              /* add Oauth later */
-            }}
-          >
-            {isLogin ? "Login" : "Sign Up"} with Google
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<LinkedInIcon fontSize="small" />}
-            fullWidth
-            sx={{
-              borderRadius: 2,
-              borderColor: "#2867B2",
-              color: "#66b2ff",
-              background: "#232c49",
-              fontWeight: "bold",
-              textTransform: "none",
-              fontSize: "0.97rem",
-              "&:hover": { bgcolor: "#212a3f", borderColor: "#254b73" },
-            }}
-            onClick={() => {
-              /* add Oauth later */
-            }}
-          >
-            {isLogin ? "Login" : "Sign Up"} with LinkedIn
-          </Button>
-        </Box>
         <Typography
           sx={{
             textAlign: "center",

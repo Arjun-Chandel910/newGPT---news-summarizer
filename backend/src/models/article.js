@@ -24,8 +24,11 @@ const articleSchema = new mongoose.Schema({
   },
   owner: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
     required: true,
+    index: true,
+  },
+  ownerName: {
+    type: String,
     index: true,
   },
   createdAt: {
@@ -39,8 +42,15 @@ const articleSchema = new mongoose.Schema({
   },
 });
 
-articleSchema.pre("save", function (next) {
+articleSchema.pre("save", async function (next) {
   this.updatedAt = Date.now();
+  if (this.owner && !this.ownerName) {
+    const User = mongoose.model("User");
+    const user = await User.findById(this.owner);
+    if (user) {
+      this.ownerName = user.username;
+    }
+  }
   next();
 });
 

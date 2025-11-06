@@ -13,7 +13,7 @@ describe("Authentication/User routes", function () {
   const signupData = {
     username: "testuser11",
     email: "testuser11@example.com",
-    password: "supersecret123",
+    password: "SuperSecret123!",
   };
 
   before(async function () {

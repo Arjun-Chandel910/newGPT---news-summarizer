@@ -29,12 +29,6 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: [true, "Password is required"],
-      minlength: [8, "Password must be at least 8 characters"],
-      maxlength: [64, "Password must be at most 64 characters"],
-      match: [
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,64}$/,
-        "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character",
-      ],
       select: false,
     },
     isAdmin: {
@@ -59,4 +53,31 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Pre-save middleware to store old username
+userSchema.pre("save", function (next) {
+  if (this.isModified("username")) {
+    this._oldUsername = this.get("username", null, { getters: false });
+  }
+  next();
+});
+
+// Post-save middleware to update ownerName in articles and summaries
+userSchema.post("save", async function (doc) {
+  if (doc._oldUsername && doc._oldUsername !== doc.username) {
+    try {
+      const Article = mongoose.model("Article");
+      const Summary = mongoose.model("Summary");
+
+      // Update articles
+      await Article.updateMany({ owner: doc._id }, { ownerName: doc.username });
+
+      // Update summaries
+      await Summary.updateMany({ user: doc._id }, { ownerName: doc.username });
+    } catch (err) {
+      console.error("Error updating ownerName:", err);
+    }
+  }
+});
+
 module.exports = mongoose.model("User", userSchema);

@@ -20,13 +20,13 @@ describe("Article Routes", function () {
   const testUser = {
     username: "articleuser13",
     email: "articleuser13@example.com",
-    password: "articlepass123",
+    password: "ArticlePass123!",
   };
 
   const otherUser = {
     username: "otherarticleuser14",
     email: "otherarticleuser14@example.com",
-    password: "otherarticlepass123",
+    password: "OtherArticlePass123!",
   };
 
   before(async function () {
