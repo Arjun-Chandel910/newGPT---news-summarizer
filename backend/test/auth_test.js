@@ -7,14 +7,19 @@ const User = require("../src/models/user.js");
 describe("Authentication/User routes", function () {
   this.timeout(10000);
   let agent = request.agent(app);
+  let cookies;
+  let testUserId;
+
   const signupData = {
     username: "testuser11",
     email: "testuser11@example.com",
     password: "supersecret123",
   };
-  let cookies;
 
-  // signup
+  before(async function () {
+    await User.deleteOne({ email: signupData.email });
+  });
+
   it("should register a new user and set cookies", async function () {
     const res = await agent
       .post("/api/auth/signup")
@@ -29,9 +34,11 @@ describe("Authentication/User routes", function () {
     expect(res.body.user).to.have.property("id");
     expect(res.body.user).to.have.property("username", signupData.username);
     expect(res.body.user).to.have.property("email", signupData.email);
+    testUserId = res.body.user.id;
     cookies = res.headers["set-cookie"];
     expect(cookies.some((c) => c.startsWith("access_token"))).to.be.true;
     expect(cookies.some((c) => c.startsWith("refresh_token"))).to.be.true;
+    cookies = cookies.join("; ");
   });
 
   it("should not register with missing fields", async function () {
@@ -54,7 +61,8 @@ describe("Authentication/User routes", function () {
 
   // login
   it("should login a user and set cookies", async function () {
-    const res = await agent
+    const loginAgent = request.agent(app);
+    const res = await loginAgent
       .post("/api/auth/login")
       .send({
         email: signupData.email,
@@ -65,9 +73,9 @@ describe("Authentication/User routes", function () {
     expect(res.body).to.have.property("message", "Logged in successfully!");
     expect(res.body).to.have.property("user");
     expect(res.body.user).to.have.property("email", signupData.email);
-    cookies = res.headers["set-cookie"];
-    expect(cookies.some((c) => c.startsWith("access_token"))).to.be.true;
-    expect(cookies.some((c) => c.startsWith("refresh_token"))).to.be.true;
+    const loginCookies = res.headers["set-cookie"];
+    expect(loginCookies.some((c) => c.startsWith("access_token"))).to.be.true;
+    expect(loginCookies.some((c) => c.startsWith("refresh_token"))).to.be.true;
   });
 
   it("should fail login with incorrect password", async function () {
@@ -82,9 +90,20 @@ describe("Authentication/User routes", function () {
   });
 
   it("should get current user with access token", async function () {
-    const res = await agent
+    const authAgent = request.agent(app);
+    const loginRes = await authAgent
+      .post("/api/auth/login")
+      .send({
+        email: signupData.email,
+        password: signupData.password,
+      })
+      .expect(200);
+
+    const authCookies = loginRes.headers["set-cookie"].join("; ");
+
+    const res = await authAgent
       .get("/api/auth/me")
-      .set("Cookie", cookies)
+      .set("Cookie", authCookies)
       .expect(200);
 
     expect(res.body).to.have.property("user");
@@ -93,9 +112,20 @@ describe("Authentication/User routes", function () {
   });
 
   it("should refresh access token with refresh token", async function () {
-    const res = await agent
+    const authAgent = request.agent(app);
+    const loginRes = await authAgent
+      .post("/api/auth/login")
+      .send({
+        email: signupData.email,
+        password: signupData.password,
+      })
+      .expect(200);
+
+    const authCookies = loginRes.headers["set-cookie"].join("; ");
+
+    const res = await authAgent
       .post("/api/auth/refresh")
-      .set("Cookie", cookies)
+      .set("Cookie", authCookies)
       .expect(200);
 
     expect(res.body).to.have.property(
@@ -107,9 +137,20 @@ describe("Authentication/User routes", function () {
   });
 
   it("should logout and clear cookies", async function () {
-    const res = await agent
+    const authAgent = request.agent(app);
+    const loginRes = await authAgent
+      .post("/api/auth/login")
+      .send({
+        email: signupData.email,
+        password: signupData.password,
+      })
+      .expect(200);
+
+    const authCookies = loginRes.headers["set-cookie"].join("; ");
+
+    const res = await authAgent
       .post("/api/auth/logout")
-      .set("Cookie", cookies)
+      .set("Cookie", authCookies)
       .expect(200);
 
     expect(res.body).to.have.property("message", "Logged out successfully.");

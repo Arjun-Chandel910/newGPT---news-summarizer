@@ -12,18 +12,6 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-
-  backend-test:
-    build: ./backend
-    env_file:
-      - ./backend/.env
-    command: npx mocha
-    depends_on:
-      - redis
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-
   frontend:
     build: ./frontend
     env_file:

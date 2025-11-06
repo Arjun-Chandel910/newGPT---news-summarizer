@@ -28,15 +28,21 @@ exports.createSummary = async (req, res) => {
     if (!originalText) {
       return res.status(400).json({ error: "Text is required." });
     }
-    const client = new InferenceClient(process.env.HF_TOKEN);
-    const summaryOutput = await client.summarization({
-      model: "facebook/bart-large-cnn",
-      inputs: originalText,
-      provider: "hf-inference",
-    });
+    let summaryText;
+    if (process.env.NODE_ENV === "test") {
+      // Mock summary for tests
+      summaryText = `Mock summary for: ${originalText}`;
+    } else {
+      const client = new InferenceClient(process.env.HF_TOKEN);
+      const summaryOutput = await client.summarization({
+        model: "facebook/bart-large-cnn",
+        inputs: originalText,
+      });
+      summaryText = summaryOutput.summary_text;
+    }
     const summary = await Summary.create({
       originalText,
-      summaryText: summaryOutput.summary_text,
+      summaryText,
       user: req.userId,
     });
 
@@ -85,6 +91,8 @@ exports.getSummariesByUser = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: "User not found" });
 
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
     // Compose cache key for this user's paginated view
     const cacheKey = `user:${userId}:summaries:page:${page}:limit:${limit}:sort:${sort}`;
     const cached = await redisClient.get(cacheKey);
@@ -92,8 +100,8 @@ exports.getSummariesByUser = async (req, res) => {
       return res.status(200).json(JSON.parse(cached));
     }
 
-    const total = await Summary.countDocuments({ user: userId });
-    const summaries = await Summary.find({ user: userId })
+    const total = await Summary.countDocuments({ user: userObjectId });
+    const summaries = await Summary.find({ user: userObjectId })
       .sort({ createdAt: sort })
       .skip((page - 1) * limit)
       .limit(limit);
