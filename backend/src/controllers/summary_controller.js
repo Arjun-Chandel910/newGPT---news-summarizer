@@ -104,6 +104,7 @@ exports.getSummariesByUser = async (req, res) => {
       const cacheKey = `user:${userId}:summaries:page:${page}:limit:${limit}:sort:${sort}`;
       const cached = await redisClient.get(cacheKey);
       if (cached) {
+        console.log("cached");
         return res.status(200).json(JSON.parse(cached));
       }
 
