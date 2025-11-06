@@ -11,8 +11,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cookieParser());
 app.use(
   cors({
-    origin:
-      "https://newgpt-news-summarizer-git-main-arjun-chandel910s-projects.vercel.app",
+    origin: "https://newgpt-news-summarizer.vercel.app",
     credentials: true,
   })
 );
